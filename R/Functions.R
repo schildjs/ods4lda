@@ -1,0 +1,775 @@
+#' Calculate V_i = Z_i D t(Z_i) + sig_e^2 I_{n_i}
+#'
+#' Calculate V_i = Z_i D t(Z_i) + sig_e^2 I_{n_i}
+#' @param zi: n_i by 2 design matrix for the random effects
+#' @param sigma0: std dev of the random intercept distribution
+#' @param sigma1: std dev of the random slope distribution
+#' @param rho: correlation between the random intercept and slope
+#' @param sigmae: std dev of the measurement error distribution
+#' @return V_i
+#' @export
+#'
+vi.calc <- function(zi, sigma0, sigma1, rho, sigmae){
+    rho.sig0.sig1 <- rho*sigma0*sigma1
+    zi %*% matrix(c(sigma0^2, rho.sig0.sig1,rho.sig0.sig1,sigma1^2), nrow=2) %*% t(zi) +
+        sigmae*sigmae*diag(length(zi[,1]))
+}
+
+#' Ascertainment correction piece for univariate sampling
+#'
+#' Calculate the (not yet log transformed) ascertainment correction under a univariate Q_i
+#'
+#' @param cutpoints: cutpoints defining the sampling regions. (a vector of length 2)
+#' @param SampProb: Sampling probabilities from within each region (vector of length 3).
+#' @param mu_q: a scalar for the mean value of the Q_i distribution
+#' @param sigma_q: a scalar for the standard deviation of the Q_i distribution
+#' @return Not yet log transformed ascertainment correction
+#' @export
+ACi1q <- function(cutpoints, SampProb, mu_q, sigma_q){
+    CDFs <- pnorm(c(-Inf, cutpoints, Inf), mu_q, sigma_q)
+    sum( SampProb*(CDFs[2:length(CDFs)] - CDFs[1:(length(CDFs)-1)]) )
+}
+
+#' Ascertainment correction piece for bivariate sampling
+#'
+#' Calculate the (not yet log transformed) ascertainment correction under a bivariate Q_i
+#'
+#' @param cutpoints: cutpoints defining the sampling regions. (a vector of length 4: c(xlow, xhigh, ylow, yhigh))
+#' @param SampProb: Sampling probabilities from within each of two sampling regions; central region and outlying region (vector of length 2).
+#' @param mu_q: a 2-vector for the mean value of the bivariate Q_i distribution
+#' @param sigma_q: a 2 by 2 covariance matrix for the bivariate Q_i distribution
+#' @return Not yet log transformed ascertainment correction
+#' @export
+## Ascertainment correction piece for bivariate sampling
+ACi2q <- function(cutpoints, SampProb, mu_q, sigma_q){
+    (SampProb[1]-SampProb[2])*pmvnorm(lower=c(cutpoints[c(1,3)]), upper=c(cutpoints[c(2,4)]), mean=mu_q, sigma=sigma_q)[[1]] + SampProb[2]
+}
+#' Calculate a subject-specific contribution to a log-likelihood for longitudinal normal data
+#'
+#' Calculate a subject-specific contribution to a log-likelihood for longitudinal normal data
+#' @param yi n_i-response vector
+#' @param xi n_i by p design matrix for fixed effects
+#' @param beta mean model parameter vector
+#' @param vi the variance covariance matrix (ZDZ+Sige2*I)
+#' @return subject specific contribution to the log-likelihood
+#' @export
+#'
+subject.ll.lme <- function(yi, xi, beta, vi){
+    resid <- yi - xi %*% beta
+    -(1/2) * (length(xi[,1])*log(2*pi) + log(det(vi)) + t(resid) %*% solve(vi) %*% resid )[1,1]
+}
+
+#' Log of the Ascertainment correction for univariate sampling
+#'
+#' Calculate the log transformed ascertainment correction under a univariate Q_i
+#'
+#' @param yi n_i-response vector
+#' @param xi n_i by p design matrix for fixed effects
+#' @param zi n_i by 2 design matric for random effects (intercept and slope)
+#' @param wi the pre-multiplier of yi to generate the sampling variable q_i
+#' @param beta mean model parameter vector
+#' @param sigma0 std dev of the random intercept distribution
+#' @param sigma1 std dev of the random slope distribution
+#' @param rho correlation between the random intercept and slope
+#' @param sigmae std dev of the measurement error distribution
+#' @param cutpoints: cutpoints defining the sampling regions. (a vector of length 2)
+#' @param SampProb: Sampling probabilities from within each region (vector of length 3).
+#' @return log transformed ascertainment correction
+#' @export
+logACi1q <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
+    vi      <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
+    mu      <- xi %*% beta
+    mu_q    <- (wi %*% mu)[,1]
+    sigma_q <- sqrt((wi %*% vi %*% t(wi))[1,1])
+    log(ACi1q(cutpoints, SampProb, mu_q, sigma_q))
+}
+
+#' Log of the Ascertainment correction piece for bivariate sampling
+#'
+#' Calculate the log transformed ascertainment correction under a bivariate Q_i
+#'
+#' @param yi n_i-response vector
+#' @param xi n_i by p design matrix for fixed effects
+#' @param zi n_i by 2 design matric for random effects (intercept and slope)
+#' @param wi the pre-multiplier of yi to generate the sampling variable q_i
+#' @param beta mean model parameter p-vector
+#' @param sigma0 std dev of the random intercept distribution
+#' @param sigma1 std dev of the random slope distribution
+#' @param rho correlation between the random intercept and slope
+#' @param sigmae std dev of the measurement error distribution
+#' @param cutpoints: cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))
+#' @param SampProb: Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).
+#' @return log transformed ascertainment correction
+#' @export
+logACi2q <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
+    vi      <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
+    mu      <- xi %*% beta
+    mu_q    <- as.vector(wi %*% mu)
+    sigma_q <- wi %*% vi %*% t(wi)
+    #print(paste("blah4", sigma_q))
+    sigma_q[2,1] <- sigma_q[1,2]
+    log( ACi2q(cutpoints=cutpoints, SampProb=SampProb, mu_q=mu_q, sigma_q=sigma_q))
+}
+#' Calculate the conditional likelihood for the univariate and bivariate sampling cases across all subjects (Keep.liC=FALSE) or the subject specific contributions to the conditional likelihood along with the exponentiated ascertainment correction for multiple imputation (Keep.liC=TRUE).
+#'
+#' Calculate the conditional likelihood for the univariate and bivariate sampling cases across all subjects (Keep.liC=FALSE) or the subject specific contributions to the conditional likelihood along with the exponentiated ascertainment correction for multiple imputation (Keep.liC=TRUE).
+#'
+#' @param y response vector
+#' @param x sum(n_i) by p design matrix for fixed effects
+#' @param z sum(n_i) by 2 design matric for random effects (intercept and slope)
+#' @param w.function options include "mean" "intercept" "slope" and "bivar"
+#' @param id sum(n_i) vector of subject ids
+#' @param beta mean model parameter p-vector
+#' @param sigma0 std dev of the random intercept distribution
+#' @param sigma1 std dev of the random slope distribution
+#' @param rho correlation between the random intercept and slope
+#' @param sigmae std dev of the measurement error distribution
+#' @param cutpoints: cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))
+#' @param SampProb: Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).
+#' @param SampProbi: Subject specific sampling probabilities.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
+#' @param Keep.liC: If FALSE, the function returns the conditional log likelihood across all subjects.  If TRUE, subject specific contributions and exponentiated subject specific ascertainment corrections are returned in a list.
+#' @return If Keep.liC=FALSE, conditional log likelihood.  If Keep.liC=TRUE, a two-element list that contains subject specific likelihood contributions and exponentiated ascertainment corrections.
+#' @export
+subject.liC <- function(subjectData, w.function, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
+        yi          <- subjectData[["yi"]]
+        xi          <- subjectData[["xi"]]
+        zi          <- subjectData[["zi"]]
+        SampProbi.i <- subjectData[["SampProbi.i"]]
+        ni          <- length(yi)
+        t.zi        <- t(zi)
+
+        if (w.function != "bivar"){
+            if (w.function=="mean")      wi <- t(rep(1/ni, ni))
+            if (w.function=="intercept") wi<- (solve(t.zi %*% zi) %*% t.zi)[1,]
+            if (w.function=="slope")     wi<- (solve(t.zi %*% zi) %*% t.zi)[2,]
+            wi         <- matrix(wi, 1, ni)
+            IPWi       <- 1/ unique(SampProbi.i)
+            vi         <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
+            logACi.tmp <- logACi1q(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
+            liC        <- subject.ll.lme(yi, xi, beta, vi)*IPWi - logACi.tmp
+            expACi     <- exp(logACi.tmp)
+        }else{
+            wi         <- solve(t.zi %*% zi) %*% t.zi
+            IPWi       <- 1/ unique(SampProbi.i)
+            vi         <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
+            logACi.tmp <- logACi2q(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
+            liC        <- subject.ll.lme(yi, xi, beta, vi)*IPWi - logACi.tmp
+            expACi     <- exp(logACi.tmp)
+        }
+        return(c(liC, expACi))
+    }
+
+total.nll.lme2 <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi, Keep.liC=FALSE){
+
+    id.tmp <- split(id,id)
+    y.tmp <- split(y,id)
+    x.tmp <- split(x,id)
+    z.tmp <- split(z,id)
+    SampProbi.tmp <- split(SampProbi,id)
+
+    subjectData <- vector('list', length=length(unique(id)))
+    subjectData <- list()
+    uid <- as.character(unique(id))
+    for(j in seq(along=uid)){
+        i <- uid[j]
+        subjectData[[j]] <- list(idi=as.character(unique(id.tmp[[i]])),
+                                 xi=matrix(x.tmp[[i]], ncol=ncol(x)),
+                                 zi=matrix(z.tmp[[i]], ncol=ncol(z)),
+                                 yi=y.tmp[[i]],
+                                 SampProbi.i=SampProbi.tmp[[i]])
+    }
+    names(subjectData) <- uid
+    liC.and.ACi <- lapply(subjectData, subject.liC, w.function=w.function, beta=beta,
+                          sigma0=sigma0, sigma1 = sigma1, rho = rho, sigmae = sigmae,
+                          cutpoints=cutpoints, SampProb=SampProb)
+
+    if (Keep.liC == FALSE){out <- -1*Reduce('+', liC.and.ACi)[1]  ## sum ss contributions to liC
+    }else{ out <- list(liC    = c(unlist(sapply(liC.and.ACi, function(x) x[1]))), ## ss contributions to liC
+                       expACi = c(unlist(sapply(liC.and.ACi, function(x) x[2]))))} ## ss contributions to expACi
+    out
+}
+#
+# ###################################
+# y=odsInt$Y
+# x=as.matrix(cbind(1, odsInt[,c("time","snp","snptime","confounder")]))
+# z=as.matrix(cbind(1, odsInt$time))
+# id=odsInt$id
+# beta=c(5,  1, -2.5,  0.75,  0)
+# sigma0= 1.6094379
+# sigma1 = 0.2231436
+# rho = -0.5108256
+# sigmae = 1.6094379
+# cutpoints=c(-2.569621, 9.992718)
+# SampProb=c(1, 0.1228, 1)
+# w.function="intercept"
+# SampProbi = rep(1, length(y))
+#
+# tmp1 <- total.nll.lme(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi, Keep.liC=FALSE)
+# tmp2 <- total.nll.lme2(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi, Keep.liC=FALSE)
+# tmp1
+# tmp2
+#
+# y=odsSlp$Y
+# x=as.matrix(cbind(1, odsSlp[,c("time","snp","snptime","confounder")]))
+# z=as.matrix(cbind(1, odsSlp$time))
+# id=odsSlp$id
+# beta=c(5,  1, -2.5,  0.75,  0)
+# sigma0= 1.6094379
+# sigma1 = 0.2231436
+# rho = -0.5108256
+# sigmae = 1.6094379
+# cutpoints=c(-0.7488912,  3.4557775)
+# SampProb=c(1, 0.1228, 1)
+# w.function="slope"
+# SampProbi = rep(1, length(y))
+#
+# tmp1 <- total.nll.lme(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi, Keep.liC=FALSE)
+# tmp2 <- total.nll.lme2(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi, Keep.liC=FALSE)
+# tmp1
+# tmp2
+#
+# y=odsBiv$Y
+# x=as.matrix(cbind(1, odsBiv[,c("time","snp","snptime","confounder")]))
+# z=as.matrix(cbind(1, odsBiv$time))
+# id=odsBiv$id
+# beta=c(5,  1, -2.5,  0.75,  0)
+# sigma0= 1.6094379
+# sigma1 = 0.2231436
+# rho = -0.5108256
+# sigmae = 1.6094379
+# cutpoints=c(-4.413225, 11.935188, -1.390172, 4.084768)
+# SampProb=c(0.122807, 1)
+# w.function="bivar"
+# SampProbi = rep(1, length(y))
+#
+# tmp1 <- total.nll.lme(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi, Keep.liC=FALSE)
+# tmp2 <- total.nll.lme2(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi, Keep.liC=FALSE)
+# tmp1
+# tmp2
+#
+# Fit.Biv  <- acml.linear(y=odsBiv$Y,
+#                         x=as.matrix(cbind(1, odsBiv[,c("time","snp","snptime","confounder")])),
+#                         z=as.matrix(cbind(1, odsBiv$time)),
+#                         id=odsBiv$id,
+#                         InitVals=c(5,  1, -2.5,  0.75,  0,  1.6094379,  0.2231436, -0.5108256,  1.6094379),
+#                         ProfileCol=NA,
+#                         cutpoints=c(-4.413225, 11.935188, -1.390172, 4.084768),
+#                         SampProb=c(0.122807, 1),
+#                         w.function="bivar")
+#
+#
+# date()
+# tmp1 <- total.nll.lme(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi, Keep.liC=FALSE)
+# date()
+# tmp2 <- total.nll.lme2(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi, Keep.liC=FALSE)
+# date()
+# tmp <-    lapply(subjectData, subject.liC, w.function="intercept", beta=c(5,  1, -2.5,  0.75,  0),
+#            sigma0= 1.6094379,
+#            sigma1 = 0.2231436,
+#            rho = -0.5108256,
+#            sigmae = 1.6094379,
+#            cutpoints=c(-2.569621, 9.992718),
+#            SampProb=c(1, 0.1228, 1))
+
+
+#' Calculate the conditional likelihood for the univariate and bivariate sampling cases across all subjects (Keep.liC=FALSE) or the subject specific contributions to the conditional likelihood along with the exponentiated ascertainment correction for multiple imputation (Keep.liC=TRUE).
+#'
+#' Calculate the conditional likelihood for the univariate and bivariate sampling cases across all subjects (Keep.liC=FALSE) or the subject specific contributions to the conditional likelihood along with the exponentiated ascertainment correction for multiple imputation (Keep.liC=TRUE).
+#'
+#' @param y response vector
+#' @param x sum(n_i) by p design matrix for fixed effects
+#' @param z sum(n_i) by 2 design matric for random effects (intercept and slope)
+#' @param w.function options include "mean" "intercept" "slope" and "bivar"
+#' @param id sum(n_i) vector of subject ids
+#' @param beta mean model parameter p-vector
+#' @param sigma0 std dev of the random intercept distribution
+#' @param sigma1 std dev of the random slope distribution
+#' @param rho correlation between the random intercept and slope
+#' @param sigmae std dev of the measurement error distribution
+#' @param cutpoints: cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))
+#' @param SampProb: Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).
+#' @param SampProbi: Subject specific sampling probabilities.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
+#' @param Keep.liC: If FALSE, the function returns the conditional log likelihood across all subjects.  If TRUE, subject specific contributions and exponentiated subject specific ascertainment corrections are returned in a list.
+#' @return If Keep.liC=FALSE, conditional log likelihood.  If Keep.liC=TRUE, a two-element list that contains subject specific likelihood contributions and exponentiated ascertainment corrections.
+#' @export
+total.nll.lme <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi, Keep.liC=FALSE){
+    liC <- expACi <- NULL
+    total <- 0
+    for(i in unique(id)){
+        yi <- y[id==i]
+        ni <- length(yi)
+        xi <- x[id==i,]
+        zi <- z[id==i,]
+        zi <- zi[,1:2]
+        t.zi <- t(zi)
+        if (w.function != "bivar"){
+            if (w.function=="mean")      wi <- t(rep(1/ni, ni))
+            if (w.function=="intercept") wi<- (solve(t.zi %*% zi) %*% t.zi)[1,]
+            if (w.function=="slope")     wi<- (solve(t.zi %*% zi) %*% t.zi)[2,]
+            wi      <- matrix(wi, 1, ni)
+            IPWi    <- 1/ unique(SampProbi[id==i])
+            vi      <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
+            ACi.tmp <- logACi1q(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
+            logLiC  <- subject.ll.lme(yi, xi, beta, vi)*IPWi - ACi.tmp
+            total   <- total + logLiC
+            liC     <- c(liC, logLiC)
+            expACi  <- c(expACi, exp(ACi.tmp))
+        }else{
+            wi      <- solve(t.zi %*% zi) %*% t.zi
+            IPWi    <- 1/ unique(SampProbi[id==i])
+            vi      <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
+            ACi.tmp <-  logACi2q(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
+            logLiC  <- subject.ll.lme(yi, xi, beta, vi)*IPWi - ACi.tmp
+            total   <- total + logLiC
+            liC     <- c(liC, logLiC)
+            expACi  <- c(expACi, exp(ACi.tmp))
+        }
+    }
+    ## Output log(L^C) or the vector of log(L_i^C): right now log(L_i^C) is used to do multiple imputation
+
+    if (Keep.liC == FALSE){out <- -total
+    }else{ out <- list(liC=liC, expACi=expACi)}
+    out
+}
+
+#' Gradient of the log of the ascertainment correction piece for sampling based on bivariate Q_i
+#'
+#' Calculate the gradient of the log transformed ascertainment correction under designs that sample based on a bivariate Q_i (numerically)
+#'
+#' @param yi n_i-response vector
+#' @param xi n_i by p design matrix for fixed effects
+#' @param zi n_i by 2 design matric for random effects (intercept and slope)
+#' @param wi the pre-multiplier of yi to generate the sampling variable q_i
+#' @param beta mean model parameter p-vector
+#' @param sigma0 std dev of the random intercept distribution
+#' @param sigma1 std dev of the random slope distribution
+#' @param rho correlation between the random intercept and slope
+#' @param sigmae std dev of the measurement error distribution
+#' @param cutpoints: cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))
+#' @param SampProb: Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).
+#' @return gradient of the log transformed ascertainment correction under the bivariate sampling design
+#' @export
+logACi2q.score <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
+    eps     <- 1e-6
+    param   <- c(beta, sigma0, sigma1, rho, sigmae)
+    npar    <- length(param)
+    vi      <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
+    mu      <- xi %*% beta
+    mu_q    <- as.vector(wi %*% mu)
+    t.wi    <- t(wi)
+    sigma_q <- wi %*% vi %*% t.wi
+    sigma_q[2,1] <- sigma_q[1,2]
+    #print(paste("blah1", sigma_q))
+    start   <- pmvnorm(lower=c(cutpoints[c(1,3)]), upper=c(cutpoints[c(2,4)]), mean=mu_q, sigma=sigma_q)[[1]]
+
+    ## for this bivariate sampling case, right now we calculate gradients numerically
+    new.area <- NULL
+    eps.mtx <- diag(c(rep(eps,npar)))
+    for (rr in 1:npar){
+        par.new      <- param+eps.mtx[rr,]
+        vi.tmp       <- vi.calc(zi, par.new[(npar-3)], par.new[(npar-2)], par.new[(npar-1)], par.new[npar])
+        mu.tmp       <- xi %*% par.new[1:(npar-4)]
+        mu_q.tmp     <- as.vector(wi %*% mu.tmp)
+        sigma_q.tmp  <- wi %*% vi.tmp %*% t.wi
+        ## sometimes the off diagonals different in the 7th or 8th decimal place.  This seeks to fix that.  Not sure why it happened.
+        sigma_q.tmp[2,1] <- sigma_q.tmp[1,2]
+        #print(paste("blah2", sigma_q.tmp))
+        #print(rr)
+        new.area     <- c(new.area, pmvnorm(lower=c(cutpoints[c(1,3)]), upper=c(cutpoints[c(2,4)]), mean=mu_q.tmp, sigma=sigma_q.tmp)[[1]])
+    }
+    Deriv <- (new.area-start)/eps
+    out <- (SampProb[1]-SampProb[2])*Deriv / ACi2q(cutpoints, SampProb, mu_q, sigma_q)
+    out
+}
+
+
+#' Gradient of the log of the ascertainment correction piece for sampling based on univariate Q_i
+#'
+#' Calculate the gradient of the log transformed ascertainment correction for sampling based on univariate Q_i
+#'
+#' @param yi n_i-response vector
+#' @param xi n_i by p design matrix for fixed effects
+#' @param zi n_i by 2 design matric for random effects (intercept and slope)
+#' @param wi the pre-multiplier of yi to generate the sampling variable q_i
+#' @param beta mean model parameter p-vector
+#' @param sigma0 std dev of the random intercept distribution
+#' @param sigma1 std dev of the random slope distribution
+#' @param rho correlation between the random intercept and slope
+#' @param sigmae std dev of the measurement error distribution
+#' @param cutpoints: cutpoints defining the sampling regions. (a vector of length 2 to define low, medium and high values of Q_i).
+#' @param SampProb: Sampling probabilities from within each region (vector of length 3 to define sampling probabilities within sampling regions
+#' @return log transformed ascertainment correction under univariate Q_i
+#' @export
+logACi1q.score <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
+    vi        <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
+    t.wi      <- t(wi)
+    wi.zi     <- wi %*% zi
+    t.wi.zi   <- t(wi.zi)
+    rho.sig0  <- rho*sigma0
+    rho.sig1  <- rho*sigma1
+    sig0.sig1 <- sigma0*sigma1
+
+    mu      <- xi %*% beta
+    mu_q    <- (wi %*% mu)[,1]
+    sigma_q <- sqrt((wi %*% vi %*% t.wi)[1,1])
+
+    l <- ACi1q(cutpoints, SampProb, mu_q, sigma_q)
+    p <- SampProb[1:(length(SampProb)-1)] - SampProb[2:(length(SampProb))]
+    f <- dnorm(cutpoints, mu_q, sigma_q)
+
+    d_li_beta <- (wi %*% xi) * sum(p*f) / l
+
+    #f_alpha_k <- sum(p*f*(cutpoints - mu_q)) / (l * sigma_q *2 * sigma_q)
+    f_alpha_k <- sum(p*f*(cutpoints - mu_q)) / (l * 2* sigma_q^2 )
+
+    a5        <- (wi.zi %*% matrix(c(2*sigma0, rho.sig1,  rho.sig1,  0),        nrow=2) %*% t.wi.zi)[1,1]
+    a6        <- (wi.zi %*% matrix(c(0,        rho.sig0,  rho.sig0,  2*sigma1), nrow=2) %*% t.wi.zi)[1,1]
+    a7        <- (wi.zi %*% matrix(c(0,        sig0.sig1, sig0.sig1, 0),        nrow=2) %*% t.wi.zi)[1,1]
+    a8        <- (wi %*% (2 * sigmae * diag(length(yi))) %*% t.wi)[1,1]
+    c(d_li_beta, c(f_alpha_k * c(a5, a6, a7, a8)))
+}
+
+#' Subject specific contribution to the lme model score (also returns marginal Vi=Cov(Y|X))
+#'
+#' Subject specific contribution to the lme model score (also returns marginal Vi=Cov(Y|X))
+#'
+#' @param yi n_i-response vector
+#' @param xi n_i by p design matrix for fixed effects
+#' @param zi n_i by 2 design matric for random effects (intercept and slope)
+#' @param beta mean model parameter p-vector
+#' @param sigma0 std dev of the random intercept distribution
+#' @param sigma1 std dev of the random slope distribution
+#' @param rho correlation between the random intercept and slope
+#' @param sigmae std dev of the measurement error distribution
+#' @return Subject specific contribution to the log-likelihood score (also returns marginal Vi=Cov(Y|X))
+#' @export
+subject.gradient.ll.lme <- function(yi, xi, zi, beta, sigma0, sigma1, rho, sigmae){
+    resid         <- yi - xi %*% beta
+    vi            <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
+    inv.v         <- solve(vi)
+    t.resid       <- t(resid)
+    t.resid.inv.v <- t.resid %*% inv.v
+    inv.v.resid   <- inv.v %*% resid
+
+    rho.sig0  <- rho*sigma0
+    rho.sig1  <- rho*sigma1
+    sig0.sig1 <- sigma0*sigma1
+    t.zi      <- t(zi)
+
+    dvk5 <- zi %*% matrix(c(2*sigma0, rho.sig1,  rho.sig1,  0),nrow=2) %*% t.zi
+    dvk6 <- zi %*% matrix(c(0,        rho.sig0,  rho.sig0,  2*sigma1),nrow=2) %*% t.zi
+    dvk7 <- zi %*% matrix(c(0,        sig0.sig1, sig0.sig1, 0),nrow=2) %*% t.zi
+    dvk8 <- 2 * sigmae  * diag(length(yi))
+
+    l14 <- t(xi) %*% inv.v.resid # for Beta
+
+    l5  <- -0.5*(sum(diag(inv.v %*% dvk5)) - t.resid.inv.v %*% dvk5 %*% inv.v.resid)[1,1]
+    l6  <- -0.5*(sum(diag(inv.v %*% dvk6)) - t.resid.inv.v %*% dvk6 %*% inv.v.resid)[1,1]
+    l7  <- -0.5*(sum(diag(inv.v %*% dvk7)) - t.resid.inv.v %*% dvk7 %*% inv.v.resid)[1,1]
+    l8  <- -0.5*(sum(diag(inv.v %*% dvk8)) - t.resid.inv.v %*% dvk8 %*% inv.v.resid)[1,1]
+    list(gr=append(l14, c(l5,l6,l7,l8)),
+         vi=vi)
+}
+
+subject.ll.score <- function(subjectData, beta, sigma0, sigma1, rho, sigmae){
+    yi          <- subjectData[["yi"]]
+    xi          <- subjectData[["xi"]]
+    zi          <- subjectData[["zi"]]
+    t.zi        <- t(zi)
+
+    resid         <- yi - xi %*% beta
+    vi            <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
+    inv.v         <- solve(vi)
+    t.resid       <- t(resid)
+    t.resid.inv.v <- t.resid %*% inv.v
+    inv.v.resid   <- inv.v %*% resid
+
+    rho.sig0  <- rho*sigma0
+    rho.sig1  <- rho*sigma1
+    sig0.sig1 <- sigma0*sigma1
+    t.zi      <- t(zi)
+
+    dvk5 <- zi %*% matrix(c(2*sigma0, rho.sig1,  rho.sig1,  0),nrow=2) %*% t.zi
+    dvk6 <- zi %*% matrix(c(0,        rho.sig0,  rho.sig0,  2*sigma1),nrow=2) %*% t.zi
+    dvk7 <- zi %*% matrix(c(0,        sig0.sig1, sig0.sig1, 0),nrow=2) %*% t.zi
+    dvk8 <- 2 * sigmae  * diag(length(yi))
+
+    l14 <- t(xi) %*% inv.v.resid # for Beta
+
+    l5  <- -0.5*(sum(diag(inv.v %*% dvk5)) - t.resid.inv.v %*% dvk5 %*% inv.v.resid)[1,1]
+    l6  <- -0.5*(sum(diag(inv.v %*% dvk6)) - t.resid.inv.v %*% dvk6 %*% inv.v.resid)[1,1]
+    l7  <- -0.5*(sum(diag(inv.v %*% dvk7)) - t.resid.inv.v %*% dvk7 %*% inv.v.resid)[1,1]
+    l8  <- -0.5*(sum(diag(inv.v %*% dvk8)) - t.resid.inv.v %*% dvk8 %*% inv.v.resid)[1,1]
+    list(gr=append(l14, c(l5,l6,l7,l8)),
+         vi=vi)
+}
+gradient.nll.lme2 <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi, CheeseCalc=FALSE){
+    total <- 0
+    param.vec <- c(beta, log(sigma0),log(sigma1),log((1+rho)/(1-rho)),log(sigmae))
+    n.par <- length(param.vec)
+    cheese <- matrix(0,n.par,n.par)
+
+    id.tmp        <- split(id,id)
+    y.tmp         <- split(y,id)
+    x.tmp         <- split(x,id)
+    z.tmp         <- split(z,id)
+    SampProbi.tmp <- split(SampProbi,id)
+    subjectData <- vector('list', length=length(unique(id)))
+    subjectData <- list()
+    uid <- as.character(unique(id))
+    for(j in seq(along=uid)){
+        i <- uid[j]
+        subjectData[[j]] <- list(idi=as.character(unique(id.tmp[[i]])),
+                                 xi=matrix(x.tmp[[i]], ncol=ncol(x)),
+                                 zi=matrix(z.tmp[[i]], ncol=ncol(z)),
+                                 yi=y.tmp[[i]],
+                                 SampProbi.i=SampProbi.tmp[[i]])
+    }
+    names(subjectData) <- uid
+
+    liC.and.ACi <- lapply(subjectData, subject.liC, w.function=w.function, beta=beta,
+                          sigma0=sigma0, sigma1 = sigma1, rho = rho, sigmae = sigmae,
+                          cutpoints=cutpoints, SampProb=SampProb)
+
+    for(i in unique(id)){
+        yi <- y[id==i]
+        ni <- length(yi)
+        xi <- x[id==i,]
+        zi <- z[id==i,]
+        zi <- zi[,1:2]
+        t.zi <- t(zi)
+        xi12 <- xi[,1:2]
+        t.xi12 <- t(xi12)
+        IPWi <- 1/ unique(SampProbi[id==i])
+        if (length(IPWi)>1)print("Hey!")
+        if (w.function != "bivar"){
+            if (w.function=="mean")      wi <- t(rep(1/ni, ni))
+            if (w.function=="intercept") wi<- (solve(t.xi12 %*% xi12) %*% t.xi12)[1,]
+            if (w.function=="slope")     wi<- (solve(t.xi12 %*% xi12) %*% t.xi12)[2,]
+            wi   <- matrix(wi, 1, ni)
+            subject <- subject.gradient.ll.lme(yi, xi, zi, beta, sigma0, sigma1, rho, sigmae)
+            correct <- logACi1q.score(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
+            Gradi  <- subject[['gr']]*IPWi  + correct ## Gradient for ith subject
+            total  <- total + Gradi
+        }else{
+            wi   <- solve(t.xi12 %*% xi12) %*% t.xi12
+            subject <- subject.gradient.ll.lme(yi, xi, zi, beta, sigma0, sigma1, rho, sigmae)
+            correct <- logACi2q.score(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
+            Gradi  <- subject[['gr']]*IPWi  - correct ## Gradient for ith subject: Notice the minus here versus the plus in the univariate case
+            total  <- total + Gradi
+        }
+
+        if (CheeseCalc==TRUE){
+            ## Need to use the chain rule: note that param,vec is on the unconstrained scale but Gradi was calculated on the constrained parameters
+            Gradi[(n.par-3)] <- Gradi[(n.par-3)]*exp(param.vec[(n.par-3)])
+            Gradi[(n.par-2)] <- Gradi[(n.par-2)]*exp(param.vec[(n.par-2)])
+            Gradi[(n.par-1)] <- Gradi[(n.par-1)]*2*exp(param.vec[(n.par-1)])/((exp(param.vec[(n.par-1)])+1)^2)
+            Gradi[n.par]     <- Gradi[n.par]  *exp(param.vec[n.par])
+            cheese  <- cheese + outer(Gradi, Gradi)
+        }
+    }
+    if (CheeseCalc==TRUE) total <- -cheese
+    -total
+}
+
+
+
+
+
+#
+
+#' Calculate the gradient of the conditional likelihood for the univariate and bivariate sampling cases across all subjects (CheeseCalc=FALSE) or the cheese part of the sandwich estimator if CheeseCalc=TRUE.
+#'
+#' Calculate the gradient of the conditional likelihood for the univariate and bivariate sampling cases across all subjects (CheeseCalc=FALSE) or the cheese part of the sandwich estimator if CheeseCalc=TRUE.
+#'
+#' @param y response vector
+#' @param x sum(n_i) by p design matrix for fixed effects
+#' @param z sum(n_i) by 2 design matric for random effects (intercept and slope)
+#' @param w.function options include "mean" "intercept" "slope" and "bivar"
+#' @param id sum(n_i) vector of subject ids
+#' @param beta mean model parameter p-vector
+#' @param sigma0 std dev of the random intercept distribution
+#' @param sigma1 std dev of the random slope distribution
+#' @param rho correlation between the random intercept and slope
+#' @param sigmae std dev of the measurement error distribution
+#' @param cutpoints: cutpoints defining the sampling regions [bivariate Q_i: a vector of length 4 c(xlow, xhigh, ylow, yhigh);
+#'                   univariate Q_i: a vector of length K c(k1,k2, ... K) to define the cutpoints for Q_i based sampling regions]
+#' @param SampProb: Sampling probabilities from within each region [bivariate Q_i: a vector of length 2 c(central region, outlying region);
+#'                   univariate Q_i: a vector of length K+1 with sampling probabilities for each region]
+#' @param SampProbi: Subject specific sampling probabilities.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
+#' @param CheeseCalc: If FALSE, the function returns the gradient of the conditional log likelihood across all subjects.  If TRUE, the cheese part of the sandwich esitmator is calculated.
+#' @return If CheeseCalc=FALSE, gradient of conditional log likelihood.  If CheeseCalc=TRUE, the cheese part of the sandwich estimator is calculated.
+#' @export
+gradient.nll.lme <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi, CheeseCalc=FALSE){
+    total <- 0
+    param.vec <- c(beta, log(sigma0),log(sigma1),log((1+rho)/(1-rho)),log(sigmae))
+    n.par <- length(param.vec)
+    cheese <- matrix(0,n.par,n.par)
+    for(i in unique(id)){
+        yi <- y[id==i]
+        ni <- length(yi)
+        xi <- x[id==i,]
+        zi <- z[id==i,]
+        zi <- zi[,1:2]
+        t.zi <- t(zi)
+        xi12 <- xi[,1:2]
+        t.xi12 <- t(xi12)
+
+        IPWi <- 1/ unique(SampProbi[id==i])
+        if (length(IPWi)>1)print("Hey!")
+        if (w.function != "bivar"){
+            if (w.function=="mean")      wi <- t(rep(1/ni, ni))
+            if (w.function=="intercept") wi<- (solve(t.xi12 %*% xi12) %*% t.xi12)[1,]
+            if (w.function=="slope")     wi<- (solve(t.xi12 %*% xi12) %*% t.xi12)[2,]
+            wi   <- matrix(wi, 1, ni)
+            subject <- subject.gradient.ll.lme(yi, xi, zi, beta, sigma0, sigma1, rho, sigmae)
+            correct <- logACi1q.score(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
+            Gradi  <- subject[['gr']]*IPWi  + correct ## Gradient for ith subject
+            total  <- total + Gradi
+        }else{
+            wi   <- solve(t.xi12 %*% xi12) %*% t.xi12
+            subject <- subject.gradient.ll.lme(yi, xi, zi, beta, sigma0, sigma1, rho, sigmae)
+            correct <- logACi2q.score(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
+            Gradi  <- subject[['gr']]*IPWi  - correct ## Gradient for ith subject: Notice the minus here versus the plus in the univariate case
+            total  <- total + Gradi
+        }
+
+        if (CheeseCalc==TRUE){
+            ## Need to use the chain rule: note that param,vec is on the unconstrained scale but Gradi was calculated on the constrained parameters
+            Gradi[(n.par-3)] <- Gradi[(n.par-3)]*exp(param.vec[(n.par-3)])
+            Gradi[(n.par-2)] <- Gradi[(n.par-2)]*exp(param.vec[(n.par-2)])
+            Gradi[(n.par-1)] <- Gradi[(n.par-1)]*2*exp(param.vec[(n.par-1)])/((exp(param.vec[(n.par-1)])+1)^2)
+            Gradi[n.par]     <- Gradi[n.par]  *exp(param.vec[n.par])
+            cheese  <- cheese + outer(Gradi, Gradi)
+        }
+    }
+    if (CheeseCalc==TRUE) total <- -cheese
+    -total
+}
+
+
+#' Calculate the log likelihood and score
+#'
+#' Calculate the log likelihood and score
+#'
+#' @param param parameter vector c(beta, log(sigma0), log(sigma1), rho, sigmae)
+#' @param y response vector
+#' @param x sum(n_i) by p design matrix for fixed effects
+#' @param z sum(n_i) by 2 design matric for random effects (intercept and slope)
+#' @param id sum(n_i) vector of subject ids
+#' @param w.function options include "mean" "intercept" "slope" and "bivar"
+#' @param cutpoints: cutpoints defining the sampling regions [bivariate Q_i: a vector of length 4 c(xlow, xhigh, ylow, yhigh);
+#'                   univariate Q_i: a vector of length K c(k1,k2, ... K) to define the cutpoints for Q_i based sampling regions]
+#' @param SampProb: Sampling probabilities from within each region [bivariate Q_i: a vector of length 2 c(central region, outlying region);
+#'                   univariate Q_i: a vector of length K+1 with sampling probabilities for each region]
+#' @param SampProbi: Subject specific sampling probabilities.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
+#' @param ProfileCol: the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters
+#'                   while fixing these columns at the values of params[ProfileCol]
+#' @param Keep.liC: If TRUE outputs subject specific conditional log lileihoods to be used for the imputation procedure described in the AOAS paper keep z sum(n_i) by 2 design matric for random effects (intercept and slope)
+#' @return The conditional log likelihood with a "gradient" attribute (if Keep.liC=FALSE) and subject specific contributions to the conditional likelihood if Keep.liC=TRUE).
+#' @export
+LogLikeAndScore <- function(params, y, x, z, id, w.function, cutpoints, SampProb, SampProbi, ProfileCol=NA, Keep.liC=FALSE, NewFn=FALSE){
+    npar   <- length(params)
+    beta   <- params[1:(npar-4)]
+    sigma0 <- exp(params[(npar-3)])
+    sigma1 <- exp(params[(npar-2)])
+    rho    <- (exp(params[(npar-1)])-1) / (exp(params[(npar-1)])+1)
+    sigmae <- exp(params[npar])
+
+    if (NewFn==FALSE){out     <- total.nll.lme(   y=y, x=x, z=z, w.function=w.function, id=id, beta=beta, sigma0=sigma0,
+                                sigma1=sigma1, rho=rho, sigmae=sigmae, cutpoints=cutpoints, SampProb=SampProb, SampProbi=SampProbi,
+                                Keep.liC=Keep.liC)}
+    if (NewFn==TRUE){out     <- total.nll.lme2(   y=y, x=x, z=z, w.function=w.function, id=id, beta=beta, sigma0=sigma0,
+                                sigma1=sigma1, rho=rho, sigmae=sigmae, cutpoints=cutpoints, SampProb=SampProb, SampProbi=SampProbi,
+                                Keep.liC=Keep.liC)}
+    GRAD    <- gradient.nll.lme(y=y, x=x, z=z, w.function=w.function, id=id, beta=beta, sigma0=sigma0,
+                                sigma1=sigma1, rho=rho, sigmae=sigmae, cutpoints=cutpoints, SampProb=SampProb, SampProbi=SampProbi)
+
+    ## Need to use the chain rule: note that params is on the unconstrained scale but GRAD was calculated on the constrained parameters
+    GRAD[(npar-3)] <- GRAD[(npar-3)]*exp(params[(npar-3)])
+    GRAD[(npar-2)] <- GRAD[(npar-2)]*exp(params[(npar-2)])
+    GRAD[(npar-1)] <- GRAD[(npar-1)]*2*exp(params[(npar-1)])/((exp(params[(npar-1)])+1)^2)
+    GRAD[npar]     <- GRAD[npar]*exp(params[npar])
+    ## Force the gradient of the fixed parameter to be zero, so that it does not move
+    if (!is.na(ProfileCol)) GRAD[ProfileCol] <- 0
+    attr(out,"gradient") <- GRAD
+
+    out
+}
+
+## If you do not want to use the ascertainment correction term in the conditional likelihood
+## set all SampProb values equal to each other.  This would be the case if you were doing
+## straightforward maximum likelihood (albeit computationally inefficient) or weighted likelihood.
+
+#' Calculate the log likelihood and score
+#'
+#' Calculate the log likelihood and score
+#'
+#' @param param parameter vector c(beta, log(sigma0), log(sigma1), rho, sigmae)
+#' @param y response vector
+#' @param x sum(n_i) by p design matrix for fixed effects
+#' @param z sum(n_i) by 2 design matric for random effects (intercept and slope)
+#' @param id sum(n_i) vector of subject ids
+#' @param w.function options include "mean" "intercept" "slope" and "bivar"
+#' @param InitVals starting values for c(beta, log(sigma0), log(sigma1), rho, log(sigmae))
+#' @param cutpoints: cutpoints defining the sampling regions [bivariate Q_i: a vector of length 4 c(xlow, xhigh, ylow, yhigh);
+#'                   univariate Q_i: a vector of length K c(k1,k2, ... K) to define the cutpoints for Q_i based sampling regions]
+#' @param SampProb: Sampling probabilities from within each region [bivariate Q_i: a vector of length 2 c(central region, outlying region);
+#'                   univariate Q_i: a vector of length K+1 with sampling probabilities for each region]
+#' @param SampProbi: Subject specific sampling probabilities.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
+#' @param ProfileCol: the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters
+#'                   while fixing these columns at the values of params[ProfileCol]
+#' @return Ascertainment corrected Maximum likelihood: Ests, covar, LogL, code, robcov
+#' @export
+acml.linear <- function(y,    ## response vector
+                        x,    ## fixed effects design matrix
+                        z,    ## random effects design matrix (right now this should be an intercept and a time-varying covariate (?)
+                        id,   ## subject id variable
+                        w.function="mean",           ## Function upon which sampling is based. Choices are the univariate "mean", "intercept", "slope", and the bivariate "bivar"
+                        InitVals,                    ## Starting values
+                        cutpoints = c(0,5),          ## the cutpoints: when w.function="bivar", this is a vector of length 4 that define a central, rectangular region with vertices (x_lower, x_upper, y_lower, y_upper).
+                        SampProb = c(1, 1, 1),       ## Sampling probabilities within the sampling strata to be used for ACML
+                        SampProbi=rep(1, length(y)), ## Subject specific sampling probabilities to only be used if doing IPWL.  Note if doing IPWL, only use robcov (robust variances) and not covar
+                        ProfileCol=NA,
+                        NewFn=FALSE){              ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
+
+    out <- nlm(LogLikeAndScore, InitVals, y=y, x=x, z=z, id=id, w.function=w.function, cutpoints=cutpoints, SampProb=SampProb,
+               SampProbi=SampProbi, ProfileCol=ProfileCol,
+               stepmax=4, iterlim=250, check.analyticals = TRUE, print.level=0, NewFn=NewFn)
+
+    ## Calculate the observed information and then invert to get the covariance matrix
+    npar <- length(out$estimate)
+    Hessian.eps <- 1e-7
+    eps.mtx     <- diag(rep(Hessian.eps, npar))
+    grad.at.max <- out$gradient
+    ObsInfo.tmp <- ObsInfo <- matrix(NA, npar, npar)
+
+    ## Observed Information
+    for (j in 1:npar){
+        temp        <- LogLikeAndScore(out$estimate+eps.mtx[j,], y=y, x=x, z=z, id=id,
+                                       w.function=w.function, cutpoints=cutpoints,
+                                       SampProb=SampProb,SampProbi=SampProbi, ProfileCol=ProfileCol, NewFn=NewFn)
+        ObsInfo.tmp[j,] <- (attr(temp,"gradient")-grad.at.max)/(Hessian.eps)
+    }
+    for (m in 1:npar){
+        for (n in 1:npar){ ObsInfo[m,n] <-  (ObsInfo.tmp[m,n]+ObsInfo.tmp[n,m])/2}}
+    ## Cheese part of the sandwich estimator
+    Cheese <- gradient.nll.lme(y=y, x=x, z=z, w.function=w.function,
+                               id=id, beta=out$estimate[c(1:(npar-4))],
+                               sigma0=exp(out$estimate[(npar-3)]),
+                               sigma1=exp(out$estimate[(npar-2)]),
+                               rho=   (exp(out$estimate[(npar-1)])-1) / (exp(out$estimate[(npar-1)])+1),
+                               sigmae=exp(out$estimate[npar]),
+                               cutpoints=cutpoints,
+                               SampProb=SampProb,
+                               SampProbi=SampProbi,
+                               CheeseCalc=TRUE)
+
+    if (!is.na(ProfileCol)){
+        out$estimate <- out$estimate[-ProfileCol]
+        ObsInfo <- ObsInfo[-ProfileCol, -ProfileCol]
+        Cheese  <- Cheese[-ProfileCol, -ProfileCol]
+    }
+
+    list(Ests=out$estimate, covar=solve(ObsInfo), LogL= -out$minimum,  Code=out$code, robcov=solve(ObsInfo)%*%Cheese%*%solve(ObsInfo))
+}
