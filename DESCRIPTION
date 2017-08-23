@@ -9,7 +9,7 @@ Description: Fit linear mixed models under outcome dependent sampling designs.
     As of now it will fit maximum likelihood for random intercept and slope models
     for random sampling designs and ascertainment corrected maximum likelihood for
     ODS designs. Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+License: GPL-3
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 5.0.1
