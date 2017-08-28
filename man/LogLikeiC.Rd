@@ -22,9 +22,9 @@ LogLikeiC(subjectData, w.function, beta, sigma0, sigma1, rho, sigmae, cutpoints,
 
 \item{sigmae}{std dev of the measurement error distribution}
 
-\item{cutpoints:}{cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))}
+\item{cutpoints}{cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))}
 
-\item{SampProb:}{Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).}
+\item{SampProb}{Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).}
 }
 \value{
 ss contributions to the conditional log likelihood.  This is an internal function used by LogLikeC
@@ -32,4 +32,3 @@ ss contributions to the conditional log likelihood.  This is an internal functio
 \description{
 Calculate the ss contributions to the conditional likelihood for the univariate and bivariate sampling cases.
 }
-

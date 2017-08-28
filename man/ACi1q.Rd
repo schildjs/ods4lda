@@ -2,6 +2,7 @@
 % Please edit documentation in R/Functions.R, R/Functions2.R
 \name{ACi1q}
 \alias{ACi1q}
+\alias{ACi1q}
 \title{Ascertainment correction piece for univariate sampling}
 \usage{
 ACi1q(cutpoints, SampProb, mu_q, sigma_q)
@@ -9,21 +10,21 @@ ACi1q(cutpoints, SampProb, mu_q, sigma_q)
 ACi1q(cutpoints, SampProb, mu_q, sigma_q)
 }
 \arguments{
-\item{cutpoints:}{cutpoints defining the sampling regions. (a vector of length 2)}
+\item{cutpoints}{cutpoints defining the sampling regions. (a vector of length 2)}
 
-\item{SampProb:}{Sampling probabilities from within each region (vector of length 3).}
+\item{SampProb}{Sampling probabilities from within each region (vector of length 3).}
 
-\item{mu_q:}{a scalar for the mean value of the Q_i distribution}
+\item{mu_q}{a scalar for the mean value of the Q_i distribution}
 
-\item{sigma_q:}{a scalar for the standard deviation of the Q_i distribution}
+\item{sigma_q}{a scalar for the standard deviation of the Q_i distribution}
 
-\item{cutpoints:}{cutpoints defining the sampling regions. (a vector of length 2)}
+\item{cutpoints}{cutpoints defining the sampling regions. (a vector of length 2)}
 
-\item{SampProb:}{Sampling probabilities from within each region (vector of length 3).}
+\item{SampProb}{Sampling probabilities from within each region (vector of length 3).}
 
-\item{mu_q:}{a scalar for the mean value of the Q_i distribution}
+\item{mu_q}{a scalar for the mean value of the Q_i distribution}
 
-\item{sigma_q:}{a scalar for the standard deviation of the Q_i distribution}
+\item{sigma_q}{a scalar for the standard deviation of the Q_i distribution}
 }
 \value{
 Not yet log transformed ascertainment correction
@@ -35,4 +36,3 @@ Calculate the (not yet log transformed) ascertainment correction under a univari
 
 Calculate the (not yet log transformed) ascertainment correction under a univariate Q_i
 }
-

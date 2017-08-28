@@ -1,11 +1,11 @@
 #' Calculate V_i = Z_i D t(Z_i) + sig_e^2 I_{n_i}
 #'
 #' Calculate V_i = Z_i D t(Z_i) + sig_e^2 I_{n_i}
-#' @param zi: n_i by 2 design matrix for the random effects
-#' @param sigma0: std dev of the random intercept distribution
-#' @param sigma1: std dev of the random slope distribution
-#' @param rho: correlation between the random intercept and slope
-#' @param sigmae: std dev of the measurement error distribution
+#' @param zi n_i by 2 design matrix for the random effects
+#' @param sigma0 std dev of the random intercept distribution
+#' @param sigma1 std dev of the random slope distribution
+#' @param rho correlation between the random intercept and slope
+#' @param sigmae std dev of the measurement error distribution
 #' @return V_i
 #' @export
 #'
@@ -19,12 +19,13 @@ vi.calc <- function(zi, sigma0, sigma1, rho, sigmae){
 #'
 #' Calculate the (not yet log transformed) ascertainment correction under a univariate Q_i
 #'
-#' @param cutpoints: cutpoints defining the sampling regions. (a vector of length 2)
-#' @param SampProb: Sampling probabilities from within each region (vector of length 3).
-#' @param mu_q: a scalar for the mean value of the Q_i distribution
-#' @param sigma_q: a scalar for the standard deviation of the Q_i distribution
+#' @param cutpoints cutpoints defining the sampling regions. (a vector of length 2)
+#' @param SampProb Sampling probabilities from within each region (vector of length 3).
+#' @param mu_q a scalar for the mean value of the Q_i distribution
+#' @param sigma_q a scalar for the standard deviation of the Q_i distribution
 #' @return Not yet log transformed ascertainment correction
 #' @export
+#' @importFrom stats pnorm
 ACi1q <- function(cutpoints, SampProb, mu_q, sigma_q){
     CDFs <- pnorm(c(-Inf, cutpoints, Inf), mu_q, sigma_q)
     sum( SampProb*(CDFs[2:length(CDFs)] - CDFs[1:(length(CDFs)-1)]) )
@@ -34,12 +35,13 @@ ACi1q <- function(cutpoints, SampProb, mu_q, sigma_q){
 #'
 #' Calculate the (not yet log transformed) ascertainment correction under a bivariate Q_i
 #'
-#' @param cutpoints: cutpoints defining the sampling regions. (a vector of length 4: c(xlow, xhigh, ylow, yhigh))
-#' @param SampProb: Sampling probabilities from within each of two sampling regions; central region and outlying region (vector of length 2).
-#' @param mu_q: a 2-vector for the mean value of the bivariate Q_i distribution
-#' @param sigma_q: a 2 by 2 covariance matrix for the bivariate Q_i distribution
+#' @param cutpoints cutpoints defining the sampling regions. (a vector of length 4: c(xlow, xhigh, ylow, yhigh))
+#' @param SampProb Sampling probabilities from within each of two sampling regions; central region and outlying region (vector of length 2).
+#' @param mu_q a 2-vector for the mean value of the bivariate Q_i distribution
+#' @param sigma_q a 2 by 2 covariance matrix for the bivariate Q_i distribution
 #' @return Not yet log transformed ascertainment correction
 #' @export
+#' @importFrom mvtnorm pmvnorm
 ## Ascertainment correction piece for bivariate sampling
 ACi2q <- function(cutpoints, SampProb, mu_q, sigma_q){
     (SampProb[1]-SampProb[2])*pmvnorm(lower=c(cutpoints[c(1,3)]), upper=c(cutpoints[c(2,4)]), mean=mu_q, sigma=sigma_q)[[1]] + SampProb[2]
@@ -72,8 +74,8 @@ subject.ll.lme <- function(yi, xi, beta, vi){
 #' @param sigma1 std dev of the random slope distribution
 #' @param rho correlation between the random intercept and slope
 #' @param sigmae std dev of the measurement error distribution
-#' @param cutpoints: cutpoints defining the sampling regions. (a vector of length 2)
-#' @param SampProb: Sampling probabilities from within each region (vector of length 3).
+#' @param cutpoints cutpoints defining the sampling regions. (a vector of length 2)
+#' @param SampProb Sampling probabilities from within each region (vector of length 3).
 #' @return log transformed ascertainment correction
 #' @export
 logACi1q <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
@@ -97,8 +99,8 @@ logACi1q <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoint
 #' @param sigma1 std dev of the random slope distribution
 #' @param rho correlation between the random intercept and slope
 #' @param sigmae std dev of the measurement error distribution
-#' @param cutpoints: cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))
-#' @param SampProb: Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).
+#' @param cutpoints cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))
+#' @param SampProb Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).
 #' @return log transformed ascertainment correction
 #' @export
 logACi2q <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
@@ -124,10 +126,10 @@ logACi2q <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoint
 #' @param sigma1 std dev of the random slope distribution
 #' @param rho correlation between the random intercept and slope
 #' @param sigmae std dev of the measurement error distribution
-#' @param cutpoints: cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))
-#' @param SampProb: Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).
-#' @param SampProbi: Subject specific sampling probabilities.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
-#' @param Keep.liC: If FALSE, the function returns the conditional log likelihood across all subjects.  If TRUE, subject specific contributions and exponentiated subject specific ascertainment corrections are returned in a list.
+#' @param cutpoints cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))
+#' @param SampProb Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).
+#' @param SampProbi Subject specific sampling probabilities.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
+#' @param Keep.liC If FALSE, the function returns the conditional log likelihood across all subjects.  If TRUE, subject specific contributions and exponentiated subject specific ascertainment corrections are returned in a list.
 #' @return If Keep.liC=FALSE, conditional log likelihood.  If Keep.liC=TRUE, a two-element list that contains subject specific likelihood contributions and exponentiated ascertainment corrections.
 #' @export
 subject.liC <- function(subjectData, w.function, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
@@ -286,10 +288,10 @@ total.nll.lme2 <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho, s
 #' @param sigma1 std dev of the random slope distribution
 #' @param rho correlation between the random intercept and slope
 #' @param sigmae std dev of the measurement error distribution
-#' @param cutpoints: cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))
-#' @param SampProb: Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).
-#' @param SampProbi: Subject specific sampling probabilities.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
-#' @param Keep.liC: If FALSE, the function returns the conditional log likelihood across all subjects.  If TRUE, subject specific contributions and exponentiated subject specific ascertainment corrections are returned in a list.
+#' @param cutpoints cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))
+#' @param SampProb Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).
+#' @param SampProbi Subject specific sampling probabilities.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
+#' @param Keep.liC If FALSE, the function returns the conditional log likelihood across all subjects.  If TRUE, subject specific contributions and exponentiated subject specific ascertainment corrections are returned in a list.
 #' @return If Keep.liC=FALSE, conditional log likelihood.  If Keep.liC=TRUE, a two-element list that contains subject specific likelihood contributions and exponentiated ascertainment corrections.
 #' @export
 total.nll.lme <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi, Keep.liC=FALSE){
@@ -345,8 +347,8 @@ total.nll.lme <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho, si
 #' @param sigma1 std dev of the random slope distribution
 #' @param rho correlation between the random intercept and slope
 #' @param sigmae std dev of the measurement error distribution
-#' @param cutpoints: cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))
-#' @param SampProb: Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).
+#' @param cutpoints cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))
+#' @param SampProb Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).
 #' @return gradient of the log transformed ascertainment correction under the bivariate sampling design
 #' @export
 logACi2q.score <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
@@ -396,10 +398,11 @@ logACi2q.score <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cu
 #' @param sigma1 std dev of the random slope distribution
 #' @param rho correlation between the random intercept and slope
 #' @param sigmae std dev of the measurement error distribution
-#' @param cutpoints: cutpoints defining the sampling regions. (a vector of length 2 to define low, medium and high values of Q_i).
-#' @param SampProb: Sampling probabilities from within each region (vector of length 3 to define sampling probabilities within sampling regions
+#' @param cutpoints cutpoints defining the sampling regions. (a vector of length 2 to define low, medium and high values of Q_i).
+#' @param SampProb Sampling probabilities from within each region (vector of length 3 to define sampling probabilities within sampling regions
 #' @return log transformed ascertainment correction under univariate Q_i
 #' @export
+#' @importFrom stats dnorm
 logACi1q.score <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
     vi        <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
     t.wi      <- t(wi)
@@ -592,12 +595,12 @@ gradient.nll.lme2 <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho
 #' @param sigma1 std dev of the random slope distribution
 #' @param rho correlation between the random intercept and slope
 #' @param sigmae std dev of the measurement error distribution
-#' @param cutpoints: cutpoints defining the sampling regions [bivariate Q_i: a vector of length 4 c(xlow, xhigh, ylow, yhigh);
+#' @param cutpoints cutpoints defining the sampling regions [bivariate Q_i: a vector of length 4 c(xlow, xhigh, ylow, yhigh);
 #'                   univariate Q_i: a vector of length K c(k1,k2, ... K) to define the cutpoints for Q_i based sampling regions]
-#' @param SampProb: Sampling probabilities from within each region [bivariate Q_i: a vector of length 2 c(central region, outlying region);
+#' @param SampProb Sampling probabilities from within each region [bivariate Q_i: a vector of length 2 c(central region, outlying region);
 #'                   univariate Q_i: a vector of length K+1 with sampling probabilities for each region]
-#' @param SampProbi: Subject specific sampling probabilities.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
-#' @param CheeseCalc: If FALSE, the function returns the gradient of the conditional log likelihood across all subjects.  If TRUE, the cheese part of the sandwich esitmator is calculated.
+#' @param SampProbi Subject specific sampling probabilities.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
+#' @param CheeseCalc If FALSE, the function returns the gradient of the conditional log likelihood across all subjects.  If TRUE, the cheese part of the sandwich esitmator is calculated.
 #' @return If CheeseCalc=FALSE, gradient of conditional log likelihood.  If CheeseCalc=TRUE, the cheese part of the sandwich estimator is calculated.
 #' @export
 gradient.nll.lme <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi, CheeseCalc=FALSE){
@@ -658,14 +661,14 @@ gradient.nll.lme <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho,
 #' @param z sum(n_i) by 2 design matric for random effects (intercept and slope)
 #' @param id sum(n_i) vector of subject ids
 #' @param w.function options include "mean" "intercept" "slope" and "bivar"
-#' @param cutpoints: cutpoints defining the sampling regions [bivariate Q_i: a vector of length 4 c(xlow, xhigh, ylow, yhigh);
+#' @param cutpoints cutpoints defining the sampling regions [bivariate Q_i: a vector of length 4 c(xlow, xhigh, ylow, yhigh);
 #'                   univariate Q_i: a vector of length K c(k1,k2, ... K) to define the cutpoints for Q_i based sampling regions]
-#' @param SampProb: Sampling probabilities from within each region [bivariate Q_i: a vector of length 2 c(central region, outlying region);
+#' @param SampProb Sampling probabilities from within each region [bivariate Q_i: a vector of length 2 c(central region, outlying region);
 #'                   univariate Q_i: a vector of length K+1 with sampling probabilities for each region]
-#' @param SampProbi: Subject specific sampling probabilities.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
-#' @param ProfileCol: the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters
+#' @param SampProbi Subject specific sampling probabilities.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
+#' @param ProfileCol the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters
 #'                   while fixing these columns at the values of params[ProfileCol]
-#' @param Keep.liC: If TRUE outputs subject specific conditional log lileihoods to be used for the imputation procedure described in the AOAS paper keep z sum(n_i) by 2 design matric for random effects (intercept and slope)
+#' @param Keep.liC If TRUE outputs subject specific conditional log lileihoods to be used for the imputation procedure described in the AOAS paper keep z sum(n_i) by 2 design matric for random effects (intercept and slope)
 #' @return The conditional log likelihood with a "gradient" attribute (if Keep.liC=FALSE) and subject specific contributions to the conditional likelihood if Keep.liC=TRUE).
 #' @export
 LogLikeAndScore <- function(params, y, x, z, id, w.function, cutpoints, SampProb, SampProbi, ProfileCol=NA, Keep.liC=FALSE, NewFn=FALSE){
@@ -712,15 +715,16 @@ LogLikeAndScore <- function(params, y, x, z, id, w.function, cutpoints, SampProb
 #' @param id sum(n_i) vector of subject ids
 #' @param w.function options include "mean" "intercept" "slope" and "bivar"
 #' @param InitVals starting values for c(beta, log(sigma0), log(sigma1), rho, log(sigmae))
-#' @param cutpoints: cutpoints defining the sampling regions [bivariate Q_i: a vector of length 4 c(xlow, xhigh, ylow, yhigh);
+#' @param cutpoints cutpoints defining the sampling regions [bivariate Q_i: a vector of length 4 c(xlow, xhigh, ylow, yhigh);
 #'                   univariate Q_i: a vector of length K c(k1,k2, ... K) to define the cutpoints for Q_i based sampling regions]
-#' @param SampProb: Sampling probabilities from within each region [bivariate Q_i: a vector of length 2 c(central region, outlying region);
+#' @param SampProb Sampling probabilities from within each region [bivariate Q_i: a vector of length 2 c(central region, outlying region);
 #'                   univariate Q_i: a vector of length K+1 with sampling probabilities for each region]
-#' @param SampProbi: Subject specific sampling probabilities.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
-#' @param ProfileCol: the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters
+#' @param SampProbi Subject specific sampling probabilities.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
+#' @param ProfileCol the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters
 #'                   while fixing these columns at the values of params[ProfileCol]
 #' @return Ascertainment corrected Maximum likelihood: Ests, covar, LogL, code, robcov
 #' @export
+#' @importFrom stats nlm
 acml.linear <- function(y,    ## response vector
                         x,    ## fixed effects design matrix
                         z,    ## random effects design matrix (right now this should be an intercept and a time-varying covariate (?)

@@ -2,6 +2,7 @@
 % Please edit documentation in R/Functions.R, R/Functions2.R
 \name{logACi2q.score}
 \alias{logACi2q.score}
+\alias{logACi2q.score}
 \title{Gradient of the log of the ascertainment correction piece for sampling based on bivariate Q_i}
 \usage{
 logACi2q.score(subjectData, w.function, beta, sigma0, sigma1, rho, sigmae,
@@ -25,6 +26,10 @@ logACi2q.score(subjectData, w.function, beta, sigma0, sigma1, rho, sigmae,
 
 \item{sigmae}{std dev of the measurement error distribution}
 
+\item{cutpoints}{cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))}
+
+\item{SampProb}{Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).}
+
 \item{yi}{n_i-response vector}
 
 \item{xi}{n_i by p design matrix for fixed effects}
@@ -32,10 +37,6 @@ logACi2q.score(subjectData, w.function, beta, sigma0, sigma1, rho, sigmae,
 \item{zi}{n_i by 2 design matric for random effects (intercept and slope)}
 
 \item{wi}{the pre-multiplier of yi to generate the sampling variable q_i}
-
-\item{cutpoints:}{cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))}
-
-\item{SampProb:}{Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).}
 
 \item{beta}{mean model parameter p-vector}
 
@@ -47,9 +48,9 @@ logACi2q.score(subjectData, w.function, beta, sigma0, sigma1, rho, sigmae,
 
 \item{sigmae}{std dev of the measurement error distribution}
 
-\item{cutpoints:}{cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))}
+\item{cutpoints}{cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))}
 
-\item{SampProb:}{Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).}
+\item{SampProb}{Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).}
 }
 \value{
 gradient of the log transformed ascertainment correction under the bivariate sampling design
@@ -61,4 +62,3 @@ Calculate the gradient of the log transformed ascertainment correction under des
 
 Calculate the gradient of the log transformed ascertainment correction under designs that sample based on a bivariate Q_i (numerically)
 }
-

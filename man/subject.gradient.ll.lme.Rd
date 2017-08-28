@@ -29,4 +29,3 @@ Subject specific contribution to the log-likelihood score (also returns marginal
 \description{
 Subject specific contribution to the lme model score (also returns marginal Vi=Cov(Y|X))
 }
-

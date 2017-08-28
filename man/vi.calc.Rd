@@ -2,6 +2,7 @@
 % Please edit documentation in R/Functions.R, R/Functions2.R
 \name{vi.calc}
 \alias{vi.calc}
+\alias{vi.calc}
 \title{Calculate V_i = Z_i D t(Z_i) + sig_e^2 I_{n_i}}
 \usage{
 vi.calc(zi, sigma0, sigma1, rho, sigmae)
@@ -9,25 +10,25 @@ vi.calc(zi, sigma0, sigma1, rho, sigmae)
 vi.calc(zi, sigma0, sigma1, rho, sigmae)
 }
 \arguments{
-\item{zi:}{n_i by 2 design matrix for the random effects}
+\item{zi}{n_i by 2 design matrix for the random effects}
 
-\item{sigma0:}{std dev of the random intercept distribution}
+\item{sigma0}{std dev of the random intercept distribution}
 
-\item{sigma1:}{std dev of the random slope distribution}
+\item{sigma1}{std dev of the random slope distribution}
 
-\item{rho:}{correlation between the random intercept and slope}
+\item{rho}{correlation between the random intercept and slope}
 
-\item{sigmae:}{std dev of the measurement error distribution}
+\item{sigmae}{std dev of the measurement error distribution}
 
-\item{zi:}{n_i by 2 design matrix for the random effects}
+\item{zi}{n_i by 2 design matrix for the random effects}
 
-\item{sigma0:}{std dev of the random intercept distribution}
+\item{sigma0}{std dev of the random intercept distribution}
 
-\item{sigma1:}{std dev of the random slope distribution}
+\item{sigma1}{std dev of the random slope distribution}
 
-\item{rho:}{correlation between the random intercept and slope}
+\item{rho}{correlation between the random intercept and slope}
 
-\item{sigmae:}{std dev of the measurement error distribution}
+\item{sigmae}{std dev of the measurement error distribution}
 }
 \value{
 V_i
@@ -39,4 +40,3 @@ Calculate V_i = Z_i D t(Z_i) + sig_e^2 I_{n_i}
 
 Calculate V_i = Z_i D t(Z_i) + sig_e^2 I_{n_i}
 }
-

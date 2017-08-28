@@ -18,20 +18,20 @@ LogLikeCAndScore(params, y, x, z, id, w.function, cutpoints, SampProb,
 
 \item{w.function}{options include "mean" "intercept" "slope" and "bivar"}
 
-\item{param}{parameter vector c(beta, log(sigma0), log(sigma1), rho, sigmae)}
-
-\item{cutpoints:}{cutpoints defining the sampling regions [bivariate Q_i: a vector of length 4 c(xlow, xhigh, ylow, yhigh);
+\item{cutpoints}{cutpoints defining the sampling regions [bivariate Q_i: a vector of length 4 c(xlow, xhigh, ylow, yhigh);
 univariate Q_i: a vector of length K c(k1,k2, ... K) to define the cutpoints for Q_i based sampling regions]}
 
-\item{SampProb:}{Sampling probabilities from within each region [bivariate Q_i: a vector of length 2 c(central region, outlying region);
+\item{SampProb}{Sampling probabilities from within each region [bivariate Q_i: a vector of length 2 c(central region, outlying region);
 univariate Q_i: a vector of length K+1 with sampling probabilities for each region]}
 
-\item{SampProbi:}{Subject specific sampling probabilities.  A vector of length sum(n_i).  Not used unless using weighted Likelihood}
+\item{SampProbi}{Subject specific sampling probabilities.  A vector of length sum(n_i).  Not used unless using weighted Likelihood}
 
-\item{ProfileCol:}{the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters
+\item{ProfileCol}{the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters
 while fixing these columns at the values of params[ProfileCol]}
 
-\item{Keep.liC:}{If TRUE outputs subject specific conditional log lileihoods to be used for the imputation procedure described in the AOAS paper keep z sum(n_i) by 2 design matric for random effects (intercept and slope)}
+\item{Keep.liC}{If TRUE outputs subject specific conditional log lileihoods to be used for the imputation procedure described in the AOAS paper keep z sum(n_i) by 2 design matric for random effects (intercept and slope)}
+
+\item{param}{parameter vector c(beta, log(sigma0), log(sigma1), rho, sigmae)}
 }
 \value{
 The conditional log likelihood with a "gradient" attribute (if Keep.liC=FALSE) and subject specific contributions to the conditional likelihood if Keep.liC=TRUE).
@@ -39,4 +39,3 @@ The conditional log likelihood with a "gradient" attribute (if Keep.liC=FALSE) a
 \description{
 Calculate the ascertainment corrected log likelihood and score
 }
-

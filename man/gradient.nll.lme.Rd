@@ -28,15 +28,15 @@ gradient.nll.lme(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae,
 
 \item{sigmae}{std dev of the measurement error distribution}
 
-\item{cutpoints:}{cutpoints defining the sampling regions [bivariate Q_i: a vector of length 4 c(xlow, xhigh, ylow, yhigh);
+\item{cutpoints}{cutpoints defining the sampling regions [bivariate Q_i: a vector of length 4 c(xlow, xhigh, ylow, yhigh);
 univariate Q_i: a vector of length K c(k1,k2, ... K) to define the cutpoints for Q_i based sampling regions]}
 
-\item{SampProb:}{Sampling probabilities from within each region [bivariate Q_i: a vector of length 2 c(central region, outlying region);
+\item{SampProb}{Sampling probabilities from within each region [bivariate Q_i: a vector of length 2 c(central region, outlying region);
 univariate Q_i: a vector of length K+1 with sampling probabilities for each region]}
 
-\item{SampProbi:}{Subject specific sampling probabilities.  A vector of length sum(n_i).  Not used unless using weighted Likelihood}
+\item{SampProbi}{Subject specific sampling probabilities.  A vector of length sum(n_i).  Not used unless using weighted Likelihood}
 
-\item{CheeseCalc:}{If FALSE, the function returns the gradient of the conditional log likelihood across all subjects.  If TRUE, the cheese part of the sandwich esitmator is calculated.}
+\item{CheeseCalc}{If FALSE, the function returns the gradient of the conditional log likelihood across all subjects.  If TRUE, the cheese part of the sandwich esitmator is calculated.}
 }
 \value{
 If CheeseCalc=FALSE, gradient of conditional log likelihood.  If CheeseCalc=TRUE, the cheese part of the sandwich estimator is calculated.
@@ -44,4 +44,3 @@ If CheeseCalc=FALSE, gradient of conditional log likelihood.  If CheeseCalc=TRUE
 \description{
 Calculate the gradient of the conditional likelihood for the univariate and bivariate sampling cases across all subjects (CheeseCalc=FALSE) or the cheese part of the sandwich estimator if CheeseCalc=TRUE.
 }
-

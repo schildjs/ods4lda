@@ -28,13 +28,13 @@ LogLikeC(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints,
 
 \item{sigmae}{std dev of the measurement error distribution}
 
-\item{cutpoints:}{cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))}
+\item{cutpoints}{cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))}
 
-\item{SampProb:}{Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).}
+\item{SampProb}{Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).}
 
-\item{SampProbi:}{Subject specific sampling probabilities.  A vector of length sum(n_i).  Not used unless using weighted Likelihood}
+\item{SampProbi}{Subject specific sampling probabilities.  A vector of length sum(n_i).  Not used unless using weighted Likelihood}
 
-\item{Keep.liC:}{If FALSE, the function returns the conditional log likelihood across all subjects.  If TRUE, subject specific contributions and exponentiated subject specific ascertainment corrections are returned in a list.}
+\item{Keep.liC}{If FALSE, the function returns the conditional log likelihood across all subjects.  If TRUE, subject specific contributions and exponentiated subject specific ascertainment corrections are returned in a list.}
 }
 \value{
 If Keep.liC=FALSE, conditional log likelihood.  If Keep.liC=TRUE, a two-element list that contains subject specific likelihood contributions and exponentiated ascertainment corrections.
@@ -42,4 +42,3 @@ If Keep.liC=FALSE, conditional log likelihood.  If Keep.liC=TRUE, a two-element 
 \description{
 Calculate the conditional likelihood for the univariate and bivariate sampling cases across all subjects (Keep.liC=FALSE) or the subject specific contributions to the conditional likelihood along with the log-transformed ascertainment correction for multiple imputation (Keep.liC=TRUE).
 }
-

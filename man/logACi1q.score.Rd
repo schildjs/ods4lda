@@ -2,6 +2,7 @@
 % Please edit documentation in R/Functions.R, R/Functions2.R
 \name{logACi1q.score}
 \alias{logACi1q.score}
+\alias{logACi1q.score}
 \title{Gradient of the log of the ascertainment correction piece for sampling based on univariate Q_i}
 \usage{
 logACi1q.score(subjectData, w.function, beta, sigma0, sigma1, rho, sigmae,
@@ -25,6 +26,10 @@ logACi1q.score(subjectData, w.function, beta, sigma0, sigma1, rho, sigmae,
 
 \item{sigmae}{std dev of the measurement error distribution}
 
+\item{cutpoints}{cutpoints defining the sampling regions. (a vector of length 2 to define low, medium and high values of Q_i).}
+
+\item{SampProb}{Sampling probabilities from within each region (vector of length 3 to define sampling probabilities within sampling regions}
+
 \item{yi}{n_i-response vector}
 
 \item{xi}{n_i by p design matrix for fixed effects}
@@ -32,10 +37,6 @@ logACi1q.score(subjectData, w.function, beta, sigma0, sigma1, rho, sigmae,
 \item{zi}{n_i by 2 design matric for random effects (intercept and slope)}
 
 \item{wi}{the pre-multiplier of yi to generate the sampling variable q_i}
-
-\item{cutpoints:}{cutpoints defining the sampling regions. (a vector of length 2 to define low, medium and high values of Q_i).}
-
-\item{SampProb:}{Sampling probabilities from within each region (vector of length 3 to define sampling probabilities within sampling regions}
 
 \item{beta}{mean model parameter p-vector}
 
@@ -61,4 +62,3 @@ Calculate the gradient of the log transformed ascertainment correction for sampl
 
 Calculate the gradient of the log transformed ascertainment correction for sampling based on univariate Q_i
 }
-

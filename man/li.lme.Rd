@@ -21,4 +21,3 @@ subject specific contribution to the log-likelihood
 \description{
 Calculate a subject-specific contribution to a log-likelihood for longitudinal normal data
 }
-

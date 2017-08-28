@@ -2,6 +2,7 @@
 % Please edit documentation in R/Functions.R, R/Functions2.R
 \name{ACi2q}
 \alias{ACi2q}
+\alias{ACi2q}
 \title{Ascertainment correction piece for bivariate sampling}
 \usage{
 ACi2q(cutpoints, SampProb, mu_q, sigma_q)
@@ -9,21 +10,21 @@ ACi2q(cutpoints, SampProb, mu_q, sigma_q)
 ACi2q(cutpoints, SampProb, mu_q, sigma_q)
 }
 \arguments{
-\item{cutpoints:}{cutpoints defining the sampling regions. (a vector of length 4: c(xlow, xhigh, ylow, yhigh))}
+\item{cutpoints}{cutpoints defining the sampling regions. (a vector of length 4: c(xlow, xhigh, ylow, yhigh))}
 
-\item{SampProb:}{Sampling probabilities from within each of two sampling regions; central region and outlying region (vector of length 2).}
+\item{SampProb}{Sampling probabilities from within each of two sampling regions; central region and outlying region (vector of length 2).}
 
-\item{mu_q:}{a 2-vector for the mean value of the bivariate Q_i distribution}
+\item{mu_q}{a 2-vector for the mean value of the bivariate Q_i distribution}
 
-\item{sigma_q:}{a 2 by 2 covariance matrix for the bivariate Q_i distribution}
+\item{sigma_q}{a 2 by 2 covariance matrix for the bivariate Q_i distribution}
 
-\item{cutpoints:}{cutpoints defining the sampling regions. (a vector of length 4: c(xlow, xhigh, ylow, yhigh))}
+\item{cutpoints}{cutpoints defining the sampling regions. (a vector of length 4: c(xlow, xhigh, ylow, yhigh))}
 
-\item{SampProb:}{Sampling probabilities from within each of two sampling regions; central region and outlying region (vector of length 2).}
+\item{SampProb}{Sampling probabilities from within each of two sampling regions; central region and outlying region (vector of length 2).}
 
-\item{mu_q:}{a 2-vector for the mean value of the bivariate Q_i distribution}
+\item{mu_q}{a 2-vector for the mean value of the bivariate Q_i distribution}
 
-\item{sigma_q:}{a 2 by 2 covariance matrix for the bivariate Q_i distribution}
+\item{sigma_q}{a 2 by 2 covariance matrix for the bivariate Q_i distribution}
 }
 \value{
 Not yet log transformed ascertainment correction
@@ -35,4 +36,3 @@ Calculate the (not yet log transformed) ascertainment correction under a bivaria
 
 Calculate the (not yet log transformed) ascertainment correction under a bivariate Q_i
 }
-

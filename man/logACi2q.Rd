@@ -2,6 +2,7 @@
 % Please edit documentation in R/Functions.R, R/Functions2.R
 \name{logACi2q}
 \alias{logACi2q}
+\alias{logACi2q}
 \title{Log of the Ascertainment correction piece for bivariate sampling}
 \usage{
 logACi2q(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
@@ -27,9 +28,9 @@ logACi2q(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
 
 \item{sigmae}{std dev of the measurement error distribution}
 
-\item{cutpoints:}{cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))}
+\item{cutpoints}{cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))}
 
-\item{SampProb:}{Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).}
+\item{SampProb}{Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).}
 
 \item{yi}{n_i-response vector}
 
@@ -49,9 +50,9 @@ logACi2q(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
 
 \item{sigmae}{std dev of the measurement error distribution}
 
-\item{cutpoints:}{cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))}
+\item{cutpoints}{cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))}
 
-\item{SampProb:}{Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).}
+\item{SampProb}{Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).}
 }
 \value{
 log transformed ascertainment correction
@@ -63,4 +64,3 @@ Calculate the log transformed ascertainment correction under a bivariate Q_i
 
 Calculate the log transformed ascertainment correction under a bivariate Q_i.  Also return vi
 }
-

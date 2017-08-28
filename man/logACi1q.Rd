@@ -2,6 +2,7 @@
 % Please edit documentation in R/Functions.R, R/Functions2.R
 \name{logACi1q}
 \alias{logACi1q}
+\alias{logACi1q}
 \title{Log of the Ascertainment correction for univariate sampling}
 \usage{
 logACi1q(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
@@ -27,9 +28,9 @@ logACi1q(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
 
 \item{sigmae}{std dev of the measurement error distribution}
 
-\item{cutpoints:}{cutpoints defining the sampling regions. (a vector of length 2)}
+\item{cutpoints}{cutpoints defining the sampling regions. (a vector of length 2)}
 
-\item{SampProb:}{Sampling probabilities from within each region (vector of length 3).}
+\item{SampProb}{Sampling probabilities from within each region (vector of length 3).}
 
 \item{yi}{n_i-response vector}
 
@@ -49,9 +50,9 @@ logACi1q(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
 
 \item{sigmae}{std dev of the measurement error distribution}
 
-\item{cutpoints:}{cutpoints defining the sampling regions. (a vector of length 2)}
+\item{cutpoints}{cutpoints defining the sampling regions. (a vector of length 2)}
 
-\item{SampProb:}{Sampling probabilities from within each region (vector of length 3).}
+\item{SampProb}{Sampling probabilities from within each region (vector of length 3).}
 }
 \value{
 log transformed ascertainment correction
@@ -63,4 +64,3 @@ Calculate the log transformed ascertainment correction under a univariate Q_i
 
 Calculate the log transformed ascertainment correction under a univariate Q_i.  Also return vi
 }
-
