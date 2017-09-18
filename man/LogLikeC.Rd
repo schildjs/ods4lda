@@ -42,4 +42,3 @@ If Keep.liC=FALSE, conditional log likelihood.  If Keep.liC=TRUE, a two-element 
 \description{
 Calculate the conditional likelihood for the univariate and bivariate sampling cases across all subjects (Keep.liC=FALSE) or the subject specific contributions to the conditional likelihood along with the log-transformed ascertainment correction for multiple imputation (Keep.liC=TRUE).
 }
-

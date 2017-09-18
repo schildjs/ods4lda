@@ -35,4 +35,3 @@ log transformed ascertainment correction
 \description{
 Calculate the log transformed ascertainment correction under a univariate Q_i.  Also return vi
 }
-
