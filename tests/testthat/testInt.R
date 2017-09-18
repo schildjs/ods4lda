@@ -1,7 +1,6 @@
 
 test_that("Acceptable Intercept Fit Absolute Error",
 {
-
   Fit.Int  <- acml.linear(y=odsInt$Y,
                           x=as.matrix(cbind(1, odsInt[,c("time","snp","snptime","confounder")])),
                           z=as.matrix(cbind(1, odsInt$time)),
@@ -22,6 +21,6 @@ test_that("Acceptable Intercept Fit Absolute Error",
                           SampProb=c(1, 0.1228, 1),
                           w.function="intercept")
 
-    expect_true( all((Fit.Int$est - Fit.Int2$est) < 1e-10) )
+    expect_true( all(abs(Fit.Int$est - Fit.Int2$est) < 1e-10) )
 })
   
