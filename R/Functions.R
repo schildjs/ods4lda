@@ -9,7 +9,7 @@
 #' @return V_i
 #' @export
 #'
-vi.calc <- function(zi, sigma0, sigma1, rho, sigmae){
+ref.vi.calc <- function(zi, sigma0, sigma1, rho, sigmae){
     rho.sig0.sig1 <- rho*sigma0*sigma1
     zi %*% matrix(c(sigma0^2, rho.sig0.sig1,rho.sig0.sig1,sigma1^2), nrow=2) %*% t(zi) +
         sigmae*sigmae*diag(length(zi[,1]))
@@ -26,7 +26,7 @@ vi.calc <- function(zi, sigma0, sigma1, rho, sigmae){
 #' @return Not yet log transformed ascertainment correction
 #' @export
 #' @importFrom stats pnorm
-ACi1q <- function(cutpoints, SampProb, mu_q, sigma_q){
+ref.ACi1q <- function(cutpoints, SampProb, mu_q, sigma_q){
     CDFs <- pnorm(c(-Inf, cutpoints, Inf), mu_q, sigma_q)
     sum( SampProb*(CDFs[2:length(CDFs)] - CDFs[1:(length(CDFs)-1)]) )
 }
@@ -43,7 +43,7 @@ ACi1q <- function(cutpoints, SampProb, mu_q, sigma_q){
 #' @export
 #' @importFrom mvtnorm pmvnorm
 ## Ascertainment correction piece for bivariate sampling
-ACi2q <- function(cutpoints, SampProb, mu_q, sigma_q){
+ref.ACi2q <- function(cutpoints, SampProb, mu_q, sigma_q){
     (SampProb[1]-SampProb[2])*pmvnorm(lower=c(cutpoints[c(1,3)]), upper=c(cutpoints[c(2,4)]), mean=mu_q, sigma=sigma_q)[[1]] + SampProb[2]
 }
 #' Calculate a subject-specific contribution to a log-likelihood for longitudinal normal data
@@ -78,12 +78,12 @@ subject.ll.lme <- function(yi, xi, beta, vi){
 #' @param SampProb Sampling probabilities from within each region (vector of length 3).
 #' @return log transformed ascertainment correction
 #' @export
-logACi1q <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
-    vi      <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
+ref.logACi1q <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
+    vi      <- ref.vi.calc(zi, sigma0, sigma1, rho, sigmae)
     mu      <- xi %*% beta
     mu_q    <- (wi %*% mu)[,1]
     sigma_q <- sqrt((wi %*% vi %*% t(wi))[1,1])
-    log(ACi1q(cutpoints, SampProb, mu_q, sigma_q))
+    log(ref.ACi1q(cutpoints, SampProb, mu_q, sigma_q))
 }
 
 #' Log of the Ascertainment correction piece for bivariate sampling
@@ -103,14 +103,14 @@ logACi1q <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoint
 #' @param SampProb Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).
 #' @return log transformed ascertainment correction
 #' @export
-logACi2q <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
-    vi      <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
+ref.logACi2q <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
+    vi      <- ref.vi.calc(zi, sigma0, sigma1, rho, sigmae)
     mu      <- xi %*% beta
     mu_q    <- as.vector(wi %*% mu)
     sigma_q <- wi %*% vi %*% t(wi)
     #print(paste("blah4", sigma_q))
     sigma_q[2,1] <- sigma_q[1,2]
-    log( ACi2q(cutpoints=cutpoints, SampProb=SampProb, mu_q=mu_q, sigma_q=sigma_q))
+    log( ref.ACi2q(cutpoints=cutpoints, SampProb=SampProb, mu_q=mu_q, sigma_q=sigma_q))
 }
 #' Calculate the conditional likelihood for the univariate and bivariate sampling cases across all subjects (Keep.liC=FALSE) or the subject specific contributions to the conditional likelihood along with the exponentiated ascertainment correction for multiple imputation (Keep.liC=TRUE).
 #'
@@ -146,15 +146,15 @@ subject.liC <- function(subjectData, w.function, beta, sigma0, sigma1, rho, sigm
             if (w.function=="slope")     wi<- (solve(t.zi %*% zi) %*% t.zi)[2,]
             wi         <- matrix(wi, 1, ni)
             IPWi       <- 1/ unique(SampProbi.i)
-            vi         <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
-            logACi.tmp <- logACi1q(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
+            vi         <- ref.vi.calc(zi, sigma0, sigma1, rho, sigmae)
+            logACi.tmp <- ref.logACi1q(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
             liC        <- subject.ll.lme(yi, xi, beta, vi)*IPWi - logACi.tmp
             expACi     <- exp(logACi.tmp)
         }else{
             wi         <- solve(t.zi %*% zi) %*% t.zi
             IPWi       <- 1/ unique(SampProbi.i)
-            vi         <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
-            logACi.tmp <- logACi2q(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
+            vi         <- ref.vi.calc(zi, sigma0, sigma1, rho, sigmae)
+            logACi.tmp <- ref.logACi2q(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
             liC        <- subject.ll.lme(yi, xi, beta, vi)*IPWi - logACi.tmp
             expACi     <- exp(logACi.tmp)
         }
@@ -310,8 +310,8 @@ total.nll.lme <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho, si
             if (w.function=="slope")     wi<- (solve(t.zi %*% zi) %*% t.zi)[2,]
             wi      <- matrix(wi, 1, ni)
             IPWi    <- 1/ unique(SampProbi[id==i])
-            vi      <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
-            ACi.tmp <- logACi1q(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
+            vi      <- ref.vi.calc(zi, sigma0, sigma1, rho, sigmae)
+            ACi.tmp <- ref.logACi1q(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
             logLiC  <- subject.ll.lme(yi, xi, beta, vi)*IPWi - ACi.tmp
             total   <- total + logLiC
             liC     <- c(liC, logLiC)
@@ -319,8 +319,8 @@ total.nll.lme <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho, si
         }else{
             wi      <- solve(t.zi %*% zi) %*% t.zi
             IPWi    <- 1/ unique(SampProbi[id==i])
-            vi      <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
-            ACi.tmp <-  logACi2q(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
+            vi      <- ref.vi.calc(zi, sigma0, sigma1, rho, sigmae)
+            ACi.tmp <-  ref.logACi2q(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
             logLiC  <- subject.ll.lme(yi, xi, beta, vi)*IPWi - ACi.tmp
             total   <- total + logLiC
             liC     <- c(liC, logLiC)
@@ -351,11 +351,11 @@ total.nll.lme <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho, si
 #' @param SampProb Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).
 #' @return gradient of the log transformed ascertainment correction under the bivariate sampling design
 #' @export
-logACi2q.score <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
+ref.logACi2q.score <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
     eps     <- 1e-6
     param   <- c(beta, sigma0, sigma1, rho, sigmae)
     npar    <- length(param)
-    vi      <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
+    vi      <- ref.vi.calc(zi, sigma0, sigma1, rho, sigmae)
     mu      <- xi %*% beta
     mu_q    <- as.vector(wi %*% mu)
     t.wi    <- t(wi)
@@ -369,7 +369,7 @@ logACi2q.score <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cu
     eps.mtx <- diag(c(rep(eps,npar)))
     for (rr in 1:npar){
         par.new      <- param+eps.mtx[rr,]
-        vi.tmp       <- vi.calc(zi, par.new[(npar-3)], par.new[(npar-2)], par.new[(npar-1)], par.new[npar])
+        vi.tmp       <- ref.vi.calc(zi, par.new[(npar-3)], par.new[(npar-2)], par.new[(npar-1)], par.new[npar])
         mu.tmp       <- xi %*% par.new[1:(npar-4)]
         mu_q.tmp     <- as.vector(wi %*% mu.tmp)
         sigma_q.tmp  <- wi %*% vi.tmp %*% t.wi
@@ -380,7 +380,7 @@ logACi2q.score <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cu
         new.area     <- c(new.area, pmvnorm(lower=c(cutpoints[c(1,3)]), upper=c(cutpoints[c(2,4)]), mean=mu_q.tmp, sigma=sigma_q.tmp)[[1]])
     }
     Deriv <- (new.area-start)/eps
-    out <- (SampProb[1]-SampProb[2])*Deriv / ACi2q(cutpoints, SampProb, mu_q, sigma_q)
+    out <- (SampProb[1]-SampProb[2])*Deriv / ref.ACi2q(cutpoints, SampProb, mu_q, sigma_q)
     out
 }
 
@@ -403,8 +403,8 @@ logACi2q.score <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cu
 #' @return log transformed ascertainment correction under univariate Q_i
 #' @export
 #' @importFrom stats dnorm
-logACi1q.score <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
-    vi        <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
+ref.logACi1q.score <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
+    vi        <- ref.vi.calc(zi, sigma0, sigma1, rho, sigmae)
     t.wi      <- t(wi)
     wi.zi     <- wi %*% zi
     t.wi.zi   <- t(wi.zi)
@@ -416,7 +416,7 @@ logACi1q.score <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cu
     mu_q    <- (wi %*% mu)[,1]
     sigma_q <- sqrt((wi %*% vi %*% t.wi)[1,1])
 
-    l <- ACi1q(cutpoints, SampProb, mu_q, sigma_q)
+    l <- ref.ACi1q(cutpoints, SampProb, mu_q, sigma_q)
     p <- SampProb[1:(length(SampProb)-1)] - SampProb[2:(length(SampProb))]
     f <- dnorm(cutpoints, mu_q, sigma_q)
 
@@ -448,7 +448,7 @@ logACi1q.score <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cu
 #' @export
 subject.gradient.ll.lme <- function(yi, xi, zi, beta, sigma0, sigma1, rho, sigmae){
     resid         <- yi - xi %*% beta
-    vi            <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
+    vi            <- ref.vi.calc(zi, sigma0, sigma1, rho, sigmae)
     inv.v         <- solve(vi)
     t.resid       <- t(resid)
     t.resid.inv.v <- t.resid %*% inv.v
@@ -481,7 +481,7 @@ subject.ll.score <- function(subjectData, beta, sigma0, sigma1, rho, sigmae){
     t.zi        <- t(zi)
 
     resid         <- yi - xi %*% beta
-    vi            <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
+    vi            <- ref.vi.calc(zi, sigma0, sigma1, rho, sigmae)
     inv.v         <- solve(vi)
     t.resid       <- t(resid)
     t.resid.inv.v <- t.resid %*% inv.v
@@ -551,13 +551,13 @@ gradient.nll.lme2 <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho
             if (w.function=="slope")     wi<- (solve(t.xi12 %*% xi12) %*% t.xi12)[2,]
             wi   <- matrix(wi, 1, ni)
             subject <- subject.gradient.ll.lme(yi, xi, zi, beta, sigma0, sigma1, rho, sigmae)
-            correct <- logACi1q.score(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
+            correct <- ref.logACi1q.score(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
             Gradi  <- subject[['gr']]*IPWi  + correct ## Gradient for ith subject
             total  <- total + Gradi
         }else{
             wi   <- solve(t.xi12 %*% xi12) %*% t.xi12
             subject <- subject.gradient.ll.lme(yi, xi, zi, beta, sigma0, sigma1, rho, sigmae)
-            correct <- logACi2q.score(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
+            correct <- ref.logACi2q.score(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
             Gradi  <- subject[['gr']]*IPWi  - correct ## Gradient for ith subject: Notice the minus here versus the plus in the univariate case
             total  <- total + Gradi
         }
@@ -626,13 +626,13 @@ gradient.nll.lme <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho,
             if (w.function=="slope")     wi<- (solve(t.xi12 %*% xi12) %*% t.xi12)[2,]
             wi   <- matrix(wi, 1, ni)
             subject <- subject.gradient.ll.lme(yi, xi, zi, beta, sigma0, sigma1, rho, sigmae)
-            correct <- logACi1q.score(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
+            correct <- ref.logACi1q.score(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
             Gradi  <- subject[['gr']]*IPWi  + correct ## Gradient for ith subject
             total  <- total + Gradi
         }else{
             wi   <- solve(t.xi12 %*% xi12) %*% t.xi12
             subject <- subject.gradient.ll.lme(yi, xi, zi, beta, sigma0, sigma1, rho, sigmae)
-            correct <- logACi2q.score(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
+            correct <- ref.logACi2q.score(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
             Gradi  <- subject[['gr']]*IPWi  - correct ## Gradient for ith subject: Notice the minus here versus the plus in the univariate case
             total  <- total + Gradi
         }
