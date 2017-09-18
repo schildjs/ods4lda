@@ -40,3 +40,4 @@ Ascertainment corrected Maximum likelihood: Ests, covar, LogL, code, robcov
 \description{
 Calculate the log likelihood and score
 }
+

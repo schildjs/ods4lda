@@ -39,3 +39,4 @@ Ascertainment corrected Maximum likelihood: Ests, covar, LogL, code, robcov
 \description{
 Fitting function: ACML for a linear mixed effects model (random intercept and slope)
 }
+
