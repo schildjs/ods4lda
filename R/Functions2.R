@@ -635,12 +635,11 @@ LogLikeCAndScore <- function(params, y, x, z, id, w.function, cutpoints, SampPro
 
 #' Fitting function: ACML for a linear mixed effects model (random intercept and slope)
 #'
-#' Fitting function: ACML for a linear mixed effects model (random intercept and slope)
+#' Fitting function: ACML or WL for a linear mixed effects model (random intercept and slope)
 #'
-#' @param param parameter vector c(beta, log(sigma0), log(sigma1), rho, sigmae)
-#' @param y response vector
-#' @param x sum(n_i) by p design matrix for fixed effects
-#' @param z sum(n_i) by 2 design matric for random effects (intercept and slope)
+#' @param formula.fixed formula for the fixed effects (of the form y~x)
+#' @param formula.random formula for the random effects (of the form ~z)
+#' @param data data frame (should contain everything in formula.fixed, formula.random, id, and SampProbiWL)
 #' @param id sum(n_i) vector of subject ids
 #' @param w.function options include "mean" "intercept" "slope" and "bivar"
 #' @param InitVals starting values for c(beta, log(sigma0), log(sigma1), rho, log(sigmae))
@@ -648,7 +647,7 @@ LogLikeCAndScore <- function(params, y, x, z, id, w.function, cutpoints, SampPro
 #'                   univariate Q_i: a vector of length K c(k1,k2, ... K) to define the cutpoints for Q_i based sampling regions]
 #' @param SampProb Sampling probabilities from within each region [bivariate Q_i: a vector of length 2 c(central region, outlying region);
 #'                   univariate Q_i: a vector of length K+1 with sampling probabilities for each region]
-#' @param SampProbi Subject specific sampling probabilities.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
+#' @param SampProbiWL Subject specific sampling probabilities.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
 #' @param ProfileCol the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters
 #'                   while fixing these columns at the values of params[ProfileCol]
 #' @return Ascertainment corrected Maximum likelihood: Ests, covar, LogL, code, robcov
