@@ -628,6 +628,7 @@ LogLikeCAndScore <- function(params, y, x, z, id, w.function, cutpoints, SampPro
     out
 }
 
+
 ## If you do not want to use the ascertainment correction term in the conditional likelihood
 ## set all SampProb values equal to each other.  This would be the case if you were doing
 ## straightforward maximum likelihood (albeit computationally inefficient) or weighted likelihood.
@@ -652,16 +653,43 @@ LogLikeCAndScore <- function(params, y, x, z, id, w.function, cutpoints, SampPro
 #'                   while fixing these columns at the values of params[ProfileCol]
 #' @return Ascertainment corrected Maximum likelihood: Ests, covar, LogL, code, robcov
 #' @export
-acml.lmem <- function(y,    ## response vector
-                        x,    ## fixed effects design matrix
-                        z,    ## random effects design matrix (right now this should be an intercept and a time-varying covariate (?)
-                        id,   ## subject id variable
-                        w.function="mean",           ## Function upon which sampling is based. Choices are the univariate "mean", "intercept", "slope", and the bivariate "bivar"
-                        InitVals,                    ## Starting values
-                        cutpoints = c(0,5),          ## the cutpoints: when w.function="bivar", this is a vector of length 4 that define a central, rectangular region with vertices (x_lower, x_upper, y_lower, y_upper).
-                        SampProb = c(1, 1, 1),       ## Sampling probabilities within the sampling strata to be used for ACML
-                        SampProbi=rep(1, length(y)), ## Subject specific sampling probabilities to only be used if doing IPWL.  Note if doing IPWL, only use robcov (robust variances) and not covar
-                        ProfileCol=NA){              ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
+acml.lmem <- function(formula.fixed, ## formula for the fixed effects (of the form y~x)
+                          formula.random, ## formula for the random effects (of the form ~z)
+                          data, ## data frame
+                          id,   ## subject id variable
+                          w.function="mean",           ## Function upon which sampling is based. Choices are the univariate "mean", "intercept", "slope", and the bivariate "bivar"
+                          InitVals,                    ## Starting values
+                          cutpoints = c(0,5),          ## the cutpoints: when w.function="bivar", this is a vector of length 4 that define a central, rectangular region with vertices (x_lower, x_upper, y_lower, y_upper).
+                          SampProb = NA,             ## Sampling probabilities within the sampling strata to be used for ACML
+                          SampProbiWL=NA,              ## Subject specific sampling probabilities to only be used if doing IPWL.  Note if doing IPWL, only use robcov (robust variances) and not covar.  This should be contained in data.
+                          ProfileCol=NA){              ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
+
+    if(is.null(formula.random)) {stop('Specify the random effects portion of the model.  It is currently NULL.')}
+    if(!is.data.frame(data)) {
+        data <- as.data.frame(data)
+        warning('data converted to data.frame.')
+    }
+
+    terms = unique( c(all.vars(formula.fixed), all.vars(formula.random),as.character(substitute(id)), as.character(substitute(SampProbiWL))) )
+    data  = data[,terms]
+
+    if(any(is.na(data))) data = na.omit(data)
+
+    id0   =  as.character(substitute(id))
+    id    = data$id = data[ , id0 ]
+
+    fixed.f = model.frame(formula.fixed, data)
+    fixed.t = attr(fixed.f, "terms")
+    y      = model.response(fixed.f,'numeric')
+    uy     = unique(y)
+    x      = model.matrix(formula.fixed, fixed.f)
+
+    rand.f = model.frame(formula.random, data)
+    z      = model.matrix(formula.random, fixed.f)
+
+    if (is.na(SampProb[1])) SampProb = c(1,1,1)
+    SampProbi0   =  as.character(substitute(SampProbiWL))
+    SampProbi    = data$SampProbi = data[ , SampProbi0 ]
 
     out <- nlm(LogLikeCAndScore, InitVals, y=y, x=x, z=z, id=id, w.function=w.function, cutpoints=cutpoints, SampProb=SampProb,
                SampProbi=SampProbi, ProfileCol=ProfileCol,
@@ -677,8 +705,8 @@ acml.lmem <- function(y,    ## response vector
     ## Observed Information
     for (j in 1:npar){
         temp        <- LogLikeCAndScore(out$estimate+eps.mtx[j,], y=y, x=x, z=z, id=id,
-                                       w.function=w.function, cutpoints=cutpoints,
-                                       SampProb=SampProb,SampProbi=SampProbi, ProfileCol=ProfileCol)
+                                        w.function=w.function, cutpoints=cutpoints,
+                                        SampProb=SampProb,SampProbi=SampProbi, ProfileCol=ProfileCol)
         ObsInfo.tmp[j,] <- (attr(temp,"gradient")-grad.at.max)/(Hessian.eps)
     }
     for (m in 1:npar){
