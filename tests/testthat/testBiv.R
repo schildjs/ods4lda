@@ -22,6 +22,8 @@ test_that("Acceptable Bivariate Fit Absolute Error",
                         SampProb=c(0.122807, 1),
                         SampProbiWL=SampProbi,
                         w.function="bivar")
+  
+  expect_true(length(Fit.Biv$Ests) == 9)
 
   expect_true( all(abs(Fit.Biv$Ests - Fit.Biv2$Ests) < 1e-10) )
   

@@ -21,6 +21,8 @@ test_that("Acceptable Slope Fit Absolute Error",
                           SampProbiWL =SampProbi,
                           w.function="slope")
 
+  expect_true(length(Fit.Slp$Ests) == 9)
+  
   expect_true( all(abs(Fit.Slp$Ests - Fit.Slp2$Ests) < 1e-10) )
     
   expect_true( all(diag(abs(Fit.Slp$cov - Fit.Slp2$cov)) < 1e-8) )

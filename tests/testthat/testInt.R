@@ -24,6 +24,8 @@ test_that("Acceptable Intercept Fit Absolute Error",
                           SampProbiWL =SampProbi,
                           w.function="intercept")
 
+  expect_true(length(Fit.Int$Ests) == 9)
+  
   expect_true( all(abs(Fit.Int$Ests - Fit.Int2$Ests) < 1e-10) )
     
   expect_true( all(diag(abs(Fit.Int$cov - Fit.Int2$cov)) < 1e-8) )
