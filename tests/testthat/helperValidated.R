@@ -352,7 +352,7 @@ total.nll.lme <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho, si
 #' @return gradient of the log transformed ascertainment correction under the bivariate sampling design
 #' @export
 ref.logACi2q.score <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
-    eps     <- 1e-6
+    eps     <- 1e-7
     param   <- c(beta, sigma0, sigma1, rho, sigmae)
     npar    <- length(param)
     vi      <- ref.vi.calc(zi, sigma0, sigma1, rho, sigmae)
