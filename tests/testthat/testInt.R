@@ -28,6 +28,8 @@ test_that("Acceptable Intercept Fit Absolute Error",
   
   expect_true( all(abs(Fit.Int$Ests - Fit.Int2$Ests) < 1e-10) )
     
-  expect_true( all(diag(abs(Fit.Int$cov - Fit.Int2$cov)) < 1e-8) )
+  expect_true( all(diag(abs(Fit.Int$covar - Fit.Int2$covar)) < 1e-8) )
+  
+  expect_true( all(diag(Fit.Int2$covar) > 0) )
 })
   

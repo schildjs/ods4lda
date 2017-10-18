@@ -108,7 +108,6 @@ ref.logACi2q <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutp
     mu      <- xi %*% beta
     mu_q    <- as.vector(wi %*% mu)
     sigma_q <- wi %*% vi %*% t(wi)
-    #print(paste("blah4", sigma_q))
     sigma_q[2,1] <- sigma_q[1,2]
     log( ref.ACi2q(cutpoints=cutpoints, SampProb=SampProb, mu_q=mu_q, sigma_q=sigma_q))
 }
@@ -352,7 +351,7 @@ total.nll.lme <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho, si
 #' @return gradient of the log transformed ascertainment correction under the bivariate sampling design
 #' @export
 ref.logACi2q.score <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
-    eps     <- 1e-7
+    eps     <- 1e-6
     param   <- c(beta, sigma0, sigma1, rho, sigmae)
     npar    <- length(param)
     vi      <- ref.vi.calc(zi, sigma0, sigma1, rho, sigmae)
@@ -361,7 +360,6 @@ ref.logACi2q.score <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae
     t.wi    <- t(wi)
     sigma_q <- wi %*% vi %*% t.wi
     sigma_q[2,1] <- sigma_q[1,2]
-    #print(paste("blah1", sigma_q))
     start   <- pmvnorm(lower=c(cutpoints[c(1,3)]), upper=c(cutpoints[c(2,4)]), mean=mu_q, sigma=sigma_q)[[1]]
 
     ## for this bivariate sampling case, right now we calculate gradients numerically
@@ -375,8 +373,6 @@ ref.logACi2q.score <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae
         sigma_q.tmp  <- wi %*% vi.tmp %*% t.wi
         ## sometimes the off diagonals different in the 7th or 8th decimal place.  This seeks to fix that.  Not sure why it happened.
         sigma_q.tmp[2,1] <- sigma_q.tmp[1,2]
-        #print(paste("blah2", sigma_q.tmp))
-        #print(rr)
         new.area     <- c(new.area, pmvnorm(lower=c(cutpoints[c(1,3)]), upper=c(cutpoints[c(2,4)]), mean=mu_q.tmp, sigma=sigma_q.tmp)[[1]])
     }
     Deriv <- (new.area-start)/eps

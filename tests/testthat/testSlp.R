@@ -25,6 +25,8 @@ test_that("Acceptable Slope Fit Absolute Error",
   
   expect_true( all(abs(Fit.Slp$Ests - Fit.Slp2$Ests) < 1e-10) )
     
-  expect_true( all(diag(abs(Fit.Slp$cov - Fit.Slp2$cov)) < 1e-8) )
+  expect_true( all(diag(abs(Fit.Slp$covar - Fit.Slp2$covar)) < 1e-8) )
+  
+  expect_true( all(diag(Fit.Slp2$covar) > 0) )
 })
   

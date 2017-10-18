@@ -4,15 +4,16 @@
 \alias{acml.lmem}
 \title{Fitting function: ACML for a linear mixed effects model (random intercept and slope)}
 \usage{
-acml.lmem(y, x, z, id, w.function = "mean", InitVals, cutpoints = c(0, 5),
-  SampProb = c(1, 1, 1), SampProbi = rep(1, length(y)), ProfileCol = NA)
+acml.lmem(formula.fixed, formula.random, data, id, w.function = "mean",
+  InitVals, cutpoints = c(0, 5), SampProb = NA, SampProbiWL = NA,
+  ProfileCol = NA)
 }
 \arguments{
-\item{y}{response vector}
+\item{formula.fixed}{formula for the fixed effects (of the form y~x)}
 
-\item{x}{sum(n_i) by p design matrix for fixed effects}
+\item{formula.random}{formula for the random effects (of the form ~z)}
 
-\item{z}{sum(n_i) by 2 design matric for random effects (intercept and slope)}
+\item{data}{data frame (should contain everything in formula.fixed, formula.random, id, and SampProbiWL)}
 
 \item{id}{sum(n_i) vector of subject ids}
 
@@ -26,16 +27,14 @@ univariate Q_i: a vector of length K c(k1,k2, ... K) to define the cutpoints for
 \item{SampProb}{Sampling probabilities from within each region [bivariate Q_i: a vector of length 2 c(central region, outlying region);
 univariate Q_i: a vector of length K+1 with sampling probabilities for each region]}
 
-\item{SampProbi}{Subject specific sampling probabilities.  A vector of length sum(n_i).  Not used unless using weighted Likelihood}
+\item{SampProbiWL}{Subject specific sampling probabilities.  A vector of length sum(n_i).  Not used unless using weighted Likelihood}
 
 \item{ProfileCol}{the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters
 while fixing these columns at the values of params[ProfileCol]}
-
-\item{param}{parameter vector c(beta, log(sigma0), log(sigma1), rho, sigmae)}
 }
 \value{
 Ascertainment corrected Maximum likelihood: Ests, covar, LogL, code, robcov
 }
 \description{
-Fitting function: ACML for a linear mixed effects model (random intercept and slope)
+Fitting function: ACML or WL for a linear mixed effects model (random intercept and slope)
 }

@@ -202,92 +202,7 @@ LogLikeiC <- function(subjectData, w.function, beta, sigma0, sigma1, rho, sigmae
 
         }
         return(c(liC, logACi))
-    }
-
-
-#
-# ###################################
-# y=odsInt$Y
-# x=as.matrix(cbind(1, odsInt[,c("time","snp","snptime","confounder")]))
-# z=as.matrix(cbind(1, odsInt$time))
-# id=odsInt$id
-# beta=c(5,  1, -2.5,  0.75,  0)
-# sigma0= 1.6094379
-# sigma1 = 0.2231436
-# rho = -0.5108256
-# sigmae = 1.6094379
-# cutpoints=c(-2.569621, 9.992718)
-# SampProb=c(1, 0.1228, 1)
-# w.function="intercept"
-# SampProbi = rep(1, length(y))
-#
-# tmp1 <- total.nll.lme(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi, Keep.liC=FALSE)
-# tmp2 <- total.nll.lme2(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi, Keep.liC=FALSE)
-# tmp1
-# tmp2
-# #
-# y=odsSlp$Y
-# x=as.matrix(cbind(1, odsSlp[,c("time","snp","snptime","confounder")]))
-# z=as.matrix(cbind(1, odsSlp$time))
-# id=odsSlp$id
-# beta=c(5,  1, -2.5,  0.75,  0)
-# sigma0= 1.6094379
-# sigma1 = 0.2231436
-# rho = -0.5108256
-# sigmae = 1.6094379
-# cutpoints=c(-0.7488912,  3.4557775)
-# SampProb=c(1, 0.1228, 1)
-# w.function="slope"
-# SampProbi = rep(1, length(y))
-#
-# tmp1 <- total.nll.lme(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi, Keep.liC=FALSE)
-# tmp2 <- total.nll.lme2(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi, Keep.liC=FALSE)
-# tmp1
-# tmp2
-# #
-# y=odsBiv$Y
-# x=as.matrix(cbind(1, odsBiv[,c("time","snp","snptime","confounder")]))
-# z=as.matrix(cbind(1, odsBiv$time))
-# id=odsBiv$id
-# beta=c(5,  1, -2.5,  0.75,  0)
-# sigma0= 1.6094379
-# sigma1 = 0.2231436
-# rho = -0.5108256
-# sigmae = 1.6094379
-# cutpoints=c(-4.413225, 11.935188, -1.390172, 4.084768)
-# SampProb=c(0.122807, 1)
-# w.function="bivar"
-# SampProbi = rep(1, length(y))
-#
-# tmp1 <- total.nll.lme(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi, Keep.liC=FALSE)
-# tmp2 <- total.nll.lme2(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi, Keep.liC=FALSE)
-# tmp1
-# tmp2
-# #
-# Fit.Biv  <- acml.linear(y=odsBiv$Y,
-#                         x=as.matrix(cbind(1, odsBiv[,c("time","snp","snptime","confounder")])),
-#                         z=as.matrix(cbind(1, odsBiv$time)),
-#                         id=odsBiv$id,
-#                         InitVals=c(5,  1, -2.5,  0.75,  0,  1.6094379,  0.2231436, -0.5108256,  1.6094379),
-#                         ProfileCol=NA,
-#                         cutpoints=c(-4.413225, 11.935188, -1.390172, 4.084768),
-#                         SampProb=c(0.122807, 1),
-#                         w.function="bivar")
-#
-#
-# date()
-# tmp1 <- total.nll.lme(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi, Keep.liC=FALSE)
-# date()
-# tmp2 <- total.nll.lme2(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi, Keep.liC=FALSE)
-# date()
-# tmp <-    lapply(subjectData, LogLikeiC, w.function="intercept", beta=c(5,  1, -2.5,  0.75,  0),
-#            sigma0= 1.6094379,
-#            sigma1 = 0.2231436,
-#            rho = -0.5108256,
-#            sigmae = 1.6094379,
-#            cutpoints=c(-2.569621, 9.992718),
-#            SampProb=c(1, 0.1228, 1))
-
+}
 
 #' Gradient of the log of the ascertainment correction piece for sampling based on bivariate Q_i
 #'
@@ -303,6 +218,7 @@ LogLikeiC <- function(subjectData, w.function, beta, sigma0, sigma1, rho, sigmae
 #' @param cutpoints cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))
 #' @param SampProb Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).
 #' @return gradient of the log transformed ascertainment correction under the bivariate sampling design
+#' @importFrom numDeriv grad
 #' @export
 logACi2q.score <- function(subjectData, w.function, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
 
@@ -311,34 +227,34 @@ logACi2q.score <- function(subjectData, w.function, beta, sigma0, sigma1, rho, s
     zi          <- subjectData[["zi"]]
     t.zi        <- t(zi)
     wi          <- solve(t.zi %*% zi) %*% t.zi
+    t.wi        <- t(wi)
 
-    eps     <- 1e-7
     param   <- c(beta, sigma0, sigma1, rho, sigmae)
     npar    <- length(param)
+    Deriv <- sapply(1:npar, 
+      function(rr) {
+        grad(function(x) {
+          new.param <- param
+          new.param[rr] <- x
+          vi      <- vi.calc(zi, new.param[(npar-3)], new.param[(npar-2)], new.param[(npar-1)], new.param[npar])
+          mu_q    <- as.vector(wi %*% (xi %*% new.param[1:(npar-4)]))
+          sigma_q <- wi %*% vi %*% t.wi
+          ## sometimes the off diagonals different in the 7th or 8th decimal place.  This seeks to fix that.  Not sure why it happened.
+          sigma_q[2,1] <- (sigma_q[2,1] + sigma_q[1,2]) / 2
+          sigma_q[1,2] <- sigma_q[2,1]
+          pmvnorm(lower=c(cutpoints[c(1,3)]), upper=c(cutpoints[c(2,4)]), mean=mu_q, sigma=sigma_q)[[1]]
+        },
+        param[rr])
+      }
+    )
+    
     vi      <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
-    mu      <- xi %*% beta
-    mu_q    <- as.vector(wi %*% mu)
-    t.wi    <- t(wi)
+    mu_q    <- as.vector(wi %*% (xi %*% beta))
     sigma_q <- wi %*% vi %*% t.wi
-    sigma_q[2,1] <- sigma_q[1,2]
-    start   <- pmvnorm(lower=c(cutpoints[c(1,3)]), upper=c(cutpoints[c(2,4)]), mean=mu_q, sigma=sigma_q)[[1]]
-
-    ## for this bivariate sampling case, right now we calculate gradients numerically
-    new.area <- NULL
-    eps.mtx <- diag(c(rep(eps,npar)))
-    for (rr in 1:npar){
-        par.new      <- param+eps.mtx[rr,]
-        vi.tmp       <- vi.calc(zi, par.new[(npar-3)], par.new[(npar-2)], par.new[(npar-1)], par.new[npar])
-        mu.tmp       <- xi %*% par.new[1:(npar-4)]
-        mu_q.tmp     <- as.vector(wi %*% mu.tmp)
-        sigma_q.tmp  <- wi %*% vi.tmp %*% t.wi
-        ## sometimes the off diagonals different in the 7th or 8th decimal place.  This seeks to fix that.  Not sure why it happened.
-        sigma_q.tmp[2,1] <- sigma_q.tmp[1,2]
-        new.area     <- c(new.area, pmvnorm(lower=c(cutpoints[c(1,3)]), upper=c(cutpoints[c(2,4)]), mean=mu_q.tmp, sigma=sigma_q.tmp)[[1]])
-    }
-    Deriv <- (new.area-start)/eps
-    out <- (SampProb[1]-SampProb[2])*Deriv / ACi2q(cutpoints, SampProb, mu_q, sigma_q)
-    out
+    sigma_q[2,1] <- (sigma_q[2,1] + sigma_q[1,2]) / 2
+    sigma_q[1,2] <- sigma_q[2,1]
+    
+    (SampProb[1]-SampProb[2])*Deriv / ACi2q(cutpoints, SampProb, mu_q, sigma_q)
 }
 
 
