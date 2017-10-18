@@ -2,8 +2,8 @@ Package: ODS4LDA
 Type: Package
 Title: Outcome Dependent Sampling (ODS) Designs for Linear Mixed Models Data Analysis
 Version: 0.1.0
-Authors@R: c(person("Jonathan", "Schildcrout", email="jonny.schild@Vanderbilt.Edu",  role=c("aut", "cre")),
-             person("Shawn",    "Garbett",     email="Shawn.Garbett@Vanderbilt.edu", role = c("ctb"))
+Authors@R: c(person("Jonathan", "Schildcrout", email="Jonny.Schild@Vanderbilt.Edu",  role=c("aut", "cre")),
+             person("Shawn",    "Garbett",     email="Shawn.Garbett@Vanderbilt.Edu", role = c("ctb"))
             )
 Author: Jonathan Schildcrout [aut, cre],
   Shawn Garbett [ctb]
