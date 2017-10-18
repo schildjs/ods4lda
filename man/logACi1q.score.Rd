@@ -22,9 +22,9 @@ logACi1q.score(subjectData, w.function, beta, sigma0, sigma1, rho, sigmae,
 
 \item{sigmae}{std dev of the measurement error distribution}
 
-\item{cutpoints:}{cutpoints defining the sampling regions. (a vector of length 2 to define low, medium and high values of $Q_i$).}
+\item{cutpoints}{cutpoints defining the sampling regions. (a vector of length 2 to define low, medium and high values of $Q_i$).}
 
-\item{SampProb:}{Sampling probabilities from within each region (vector of length 3 to define sampling probabilities within sampling regions}
+\item{SampProb}{Sampling probabilities from within each region (vector of length 3 to define sampling probabilities within sampling regions}
 }
 \value{
 gradient of the log transformed ascertainment correction under univariate $Q_i$

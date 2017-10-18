@@ -219,6 +219,7 @@ LogLikeiC <- function(subjectData, w.function, beta, sigma0, sigma1, rho, sigmae
 #' @param SampProb Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).
 #' @return gradient of the log transformed ascertainment correction under the bivariate sampling design
 #' @importFrom numDeriv grad
+#' @importFrom mvtnorm pmvnorm
 #' @export
 logACi2q.score <- function(subjectData, w.function, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
 
@@ -269,8 +270,8 @@ logACi2q.score <- function(subjectData, w.function, beta, sigma0, sigma1, rho, s
 #' @param sigma1 std dev of the random slope distribution
 #' @param rho correlation between the random intercept and slope
 #' @param sigmae std dev of the measurement error distribution
-#' @param cutpoints: cutpoints defining the sampling regions. (a vector of length 2 to define low, medium and high values of $Q_i$).
-#' @param SampProb: Sampling probabilities from within each region (vector of length 3 to define sampling probabilities within sampling regions
+#' @param cutpoints cutpoints defining the sampling regions. (a vector of length 2 to define low, medium and high values of $Q_i$).
+#' @param SampProb Sampling probabilities from within each region (vector of length 3 to define sampling probabilities within sampling regions
 #' @return gradient of the log transformed ascertainment correction under univariate $Q_i$
 #' @export
 #' @importFrom stats dnorm
@@ -502,7 +503,7 @@ LogLikeC.score <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho, s
 #'
 #' Calculate the ascertainment corrected log likelihood and score
 #'
-#' @param param parameter vector c(beta, log(sigma0), log(sigma1), rho, sigmae)
+#' @param params parameter vector c(beta, log(sigma0), log(sigma1), rho, sigmae)
 #' @param y response vector
 #' @param x sum(n_i) by p design matrix for fixed effects
 #' @param z sum(n_i) by 2 design matric for random effects (intercept and slope)
@@ -567,6 +568,12 @@ LogLikeCAndScore <- function(params, y, x, z, id, w.function, cutpoints, SampPro
 #' @param ProfileCol the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters
 #'                   while fixing these columns at the values of params[ProfileCol]
 #' @return Ascertainment corrected Maximum likelihood: Ests, covar, LogL, code, robcov
+#' @importFrom stats model.frame
+#' @importFrom stats model.matrix
+#' @importFrom stats model.response
+#' @importFrom stats na.omit
+#' @importFrom stats nlm
+#' @importFrom stats pnorm
 #' @export
 acml.lmem <- function(formula.fixed, ## formula for the fixed effects (of the form y~x)
                           formula.random, ## formula for the random effects (of the form ~z)

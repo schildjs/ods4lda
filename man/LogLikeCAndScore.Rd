@@ -8,6 +8,8 @@ LogLikeCAndScore(params, y, x, z, id, w.function, cutpoints, SampProb,
   SampProbi, ProfileCol = NA, Keep.liC = FALSE)
 }
 \arguments{
+\item{params}{parameter vector c(beta, log(sigma0), log(sigma1), rho, sigmae)}
+
 \item{y}{response vector}
 
 \item{x}{sum(n_i) by p design matrix for fixed effects}
@@ -30,8 +32,6 @@ univariate Q_i: a vector of length K+1 with sampling probabilities for each regi
 while fixing these columns at the values of params[ProfileCol]}
 
 \item{Keep.liC}{If TRUE outputs subject specific conditional log lileihoods to be used for the imputation procedure described in the AOAS paper keep z sum(n_i) by 2 design matric for random effects (intercept and slope)}
-
-\item{param}{parameter vector c(beta, log(sigma0), log(sigma1), rho, sigmae)}
 }
 \value{
 The conditional log likelihood with a "gradient" attribute (if Keep.liC=FALSE) and subject specific contributions to the conditional likelihood if Keep.liC=TRUE).
