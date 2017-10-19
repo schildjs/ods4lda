@@ -232,21 +232,21 @@ logACi2q.score <- function(subjectData, w.function, beta, sigma0, sigma1, rho, s
 
     param   <- c(beta, sigma0, sigma1, rho, sigmae)
     npar    <- length(param)
-    Deriv <- sapply(1:npar, 
-      function(rr) {
-        grad(function(x) {
-          new.param <- param
-          new.param[rr] <- x
-          vi      <- vi.calc(zi, new.param[(npar-3)], new.param[(npar-2)], new.param[(npar-1)], new.param[npar])
-          mu_q    <- as.vector(wi %*% (xi %*% new.param[1:(npar-4)]))
-          sigma_q <- wi %*% vi %*% t.wi
-          ## sometimes the off diagonals different in the 7th or 8th decimal place.  This seeks to fix that.  Not sure why it happened.
-          sigma_q[2,1] <- (sigma_q[2,1] + sigma_q[1,2]) / 2
-          sigma_q[1,2] <- sigma_q[2,1]
-          pmvnorm(lower=c(cutpoints[c(1,3)]), upper=c(cutpoints[c(2,4)]), mean=mu_q, sigma=sigma_q)[[1]]
-        },
-        param[rr])
-      }
+    Deriv <- sapply(1:npar,  function(rr)
+                             {
+                                grad(function(x) { new.param <- param
+                                                   new.param[rr] <- x
+                                                   vi      <- vi.calc(zi, new.param[(npar-3)], new.param[(npar-2)], new.param[(npar-1)], new.param[npar])
+                                                   mu_q    <- as.vector(wi %*% (xi %*% new.param[1:(npar-4)]))
+                                                   sigma_q <- wi %*% vi %*% t.wi
+                                                   ## sometimes the off diagonals different in the 7th or 8th decimal place.  This seeks to fix that.  Not sure why it happened.
+                                                   sigma_q[2,1] <- (sigma_q[2,1] + sigma_q[1,2]) / 2
+                                                   sigma_q[1,2] <- sigma_q[2,1]
+                                                   pmvnorm(lower=c(cutpoints[c(1,3)]), upper=c(cutpoints[c(2,4)]), mean=mu_q, sigma=sigma_q)[[1]]
+                                                 },
+                                     param[rr],
+                                     method="simple")
+                             }
     )
     
     vi      <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
