@@ -651,5 +651,9 @@ acml.lmem <- function(formula.fixed, ## formula for the fixed effects (of the fo
         Cheese  <- Cheese[-ProfileCol, -ProfileCol]
     }
 
-    list(Ests=out$estimate, covar=solve(ObsInfo), LogL= -out$minimum,  Code=out$code, robcov=solve(ObsInfo)%*%Cheese%*%solve(ObsInfo))
+    out <- list(Ests=out$estimate, covar=solve(ObsInfo), LogL= -out$minimum,  Code=out$code, robcov=solve(ObsInfo)%*%Cheese%*%solve(ObsInfo))
+    
+    if(kappa(out$covar) > 1e5) warning("Poorly Conditioned Model")
+    
+    out
 }
