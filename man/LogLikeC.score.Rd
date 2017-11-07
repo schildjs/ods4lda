@@ -44,3 +44,4 @@ If CheeseCalc=FALSE, gradient of conditional log likelihood.  If CheeseCalc=TRUE
 \description{
 Calculate the gradient of the conditional likelihood for the univariate and bivariate sampling cases across all subjects (CheeseCalc=FALSE) or the cheese part of the sandwich estimator if CheeseCalc=TRUE.
 }
+

@@ -32,3 +32,4 @@ ss contributions to the conditional log likelihood.  This is an internal functio
 \description{
 Calculate the ss contributions to the conditional likelihood for the univariate and bivariate sampling cases.
 }
+

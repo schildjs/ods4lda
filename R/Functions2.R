@@ -248,13 +248,13 @@ logACi2q.score <- function(subjectData, w.function, beta, sigma0, sigma1, rho, s
                                      method="simple")
                              }
     )
-    
+
     vi      <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
     mu_q    <- as.vector(wi %*% (xi %*% beta))
     sigma_q <- wi %*% vi %*% t.wi
     sigma_q[2,1] <- (sigma_q[2,1] + sigma_q[1,2]) / 2
     sigma_q[1,2] <- sigma_q[2,1]
-    
+
     (SampProb[1]-SampProb[2])*Deriv / ACi2q(cutpoints, SampProb, mu_q, sigma_q)
 }
 
@@ -613,20 +613,20 @@ acml.lmem <- function(formula.fixed, ## formula for the fixed effects (of the fo
     SampProbi0   =  as.character(substitute(SampProbiWL))
     SampProbi    = data$SampProbi = data[ , SampProbi0 ]
 
-    out <- nlm(LogLikeCAndScore, InitVals, y=y, x=x, z=z, id=id, w.function=w.function, cutpoints=cutpoints, SampProb=SampProb,
+    acml.fit <- nlm(LogLikeCAndScore, InitVals, y=y, x=x, z=z, id=id, w.function=w.function, cutpoints=cutpoints, SampProb=SampProb,
                SampProbi=SampProbi, ProfileCol=ProfileCol,
                stepmax=4, iterlim=250, check.analyticals = TRUE, print.level=0)
 
     ## Calculate the observed information and then invert to get the covariance matrix
-    npar <- length(out$estimate)
+    npar <- length(acml.fit$estimate)
     Hessian.eps <- 1e-7
     eps.mtx     <- diag(rep(Hessian.eps, npar))
-    grad.at.max <- out$gradient
+    grad.at.max <- acml.fit$gradient
     ObsInfo.tmp <- ObsInfo <- matrix(NA, npar, npar)
 
     ## Observed Information
     for (j in 1:npar){
-        temp        <- LogLikeCAndScore(out$estimate+eps.mtx[j,], y=y, x=x, z=z, id=id,
+        temp        <- LogLikeCAndScore(acml.fit$estimate+eps.mtx[j,], y=y, x=x, z=z, id=id,
                                         w.function=w.function, cutpoints=cutpoints,
                                         SampProb=SampProb,SampProbi=SampProbi, ProfileCol=ProfileCol)
         ObsInfo.tmp[j,] <- (attr(temp,"gradient")-grad.at.max)/(Hessian.eps)
@@ -635,25 +635,38 @@ acml.lmem <- function(formula.fixed, ## formula for the fixed effects (of the fo
         for (n in 1:npar){ ObsInfo[m,n] <-  (ObsInfo.tmp[m,n]+ObsInfo.tmp[n,m])/2}}
     ## Cheese part of the sandwich estimator
     Cheese <- LogLikeC.score(y=y, x=x, z=z, w.function=w.function,
-                             id=id, beta=out$estimate[c(1:(npar-4))],
-                             sigma0=exp(out$estimate[(npar-3)]),
-                             sigma1=exp(out$estimate[(npar-2)]),
-                             rho=   (exp(out$estimate[(npar-1)])-1) / (exp(out$estimate[(npar-1)])+1),
-                             sigmae=exp(out$estimate[npar]),
+                             id=id, beta=acml.fit$estimate[c(1:(npar-4))],
+                             sigma0=exp(acml.fit$estimate[(npar-3)]),
+                             sigma1=exp(acml.fit$estimate[(npar-2)]),
+                             rho=   (exp(acml.fit$estimate[(npar-1)])-1) / (exp(acml.fit$estimate[(npar-1)])+1),
+                             sigmae=exp(acml.fit$estimate[npar]),
                              cutpoints=cutpoints,
                              SampProb=SampProb,
                              SampProbi=SampProbi,
                              CheeseCalc=TRUE)
 
     if (!is.na(ProfileCol)){
-        out$estimate <- out$estimate[-ProfileCol]
+        acml.fit$estimate <- acml.fit$estimate[-ProfileCol]
         ObsInfo <- ObsInfo[-ProfileCol, -ProfileCol]
         Cheese  <- Cheese[-ProfileCol, -ProfileCol]
     }
 
-    out <- list(Ests=out$estimate, covar=solve(ObsInfo), LogL= -out$minimum,  Code=out$code, robcov=solve(ObsInfo)%*%Cheese%*%solve(ObsInfo))
-    
+
+    out              <- NULL
+    out$call         <- match.call()
+    out$coefficients <- acml.fit$estimate
+    out$covariance   <- solve(ObsInfo)
+    out$robcov       <- solve(ObsInfo)%*%Cheese%*%solve(ObsInfo)
+    out$logLik       <- -acml.fit$minimum
+    attr(out,'args') <- list(formula.fixed=formula.fixed,
+                             formula.random=formula.random,
+                             id=id,
+                             w.function=w.function,
+                             cutpoints = cutpoints,
+                             SampProb = SampProb,
+                             SampProbiWL=SampProbi,
+                             SampProbiVar = as.character(substitute(SampProbiWL)),
+                             ProfileCol=ProfileCol)
     if(kappa(out$covar) > 1e5) warning("Poorly Conditioned Model")
-    
     out
 }

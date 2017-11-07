@@ -1,23 +1,28 @@
 Package: ODS4LDA
 Type: Package
-Title: Outcome Dependent Sampling (ODS) Designs for Linear Mixed Models Data Analysis
+Title: Outcome Dependent Sampling (ODS) Designs for Linear Mixed Models Data
+    Analysis
 Version: 0.1.0
 Authors@R: c(person("Jonathan", "Schildcrout", email="Jonny.Schild@Vanderbilt.Edu",  role=c("aut", "cre")),
              person("Shawn",    "Garbett",     email="Shawn.Garbett@Vanderbilt.Edu", role = c("ctb"))
             )
 Author: Jonathan Schildcrout [aut, cre],
-  Shawn Garbett [ctb]
+    Shawn Garbett [ctb]
 Maintainer: Jonathan S. Schildcrout <jonathan.schildcrout@vanderbilt.edu>
-Description: A package that fits linear mixed models under outcome dependent sampling (ODS)
-  designs. At present, it uses maximum likelihood for random intercept and slope models
-  for random sampling designs and ascertainment corrected maximum likelihood for
-  ODS designs [see Schildcrout, J.S., Rathouz, P.J., Zelnick, L.R., Garbett, S.P., Heagerty, P.J..
-  2015. "Biased Sampling Designs to Improve Research Efficiency: Factors Influencing
-  Pulmonary Function over Time in Children with Asthma". Annual of Applied Statistics. (2):731-753. 
-  <doi:10.1214/15-AOAS826>].
+Description: A package that fits linear mixed models under outcome dependent
+    sampling (ODS) designs. At present, it uses maximum likelihood for random
+    intercept and slope models for random sampling designs and ascertainment
+    corrected maximum likelihood for ODS designs [see Schildcrout, J.S., Rathouz,
+    P.J., Zelnick, L.R., Garbett, S.P., Heagerty, P.J.. 2015. "Biased Sampling
+    Designs to Improve Research Efficiency: Factors Influencing Pulmonary Function
+    over Time in Children with Asthma". Annual of Applied Statistics. (2):731-753.
+    <doi:10.1214/15-AOAS826>].
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.0.1
-Depends: mvtnorm, numDeriv
-Suggests: testthat
+RoxygenNote: 5.0.1
+Depends:
+    mvtnorm,
+    numDeriv
+Suggests:
+    testthat

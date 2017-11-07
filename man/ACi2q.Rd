@@ -21,3 +21,4 @@ Not yet log transformed ascertainment correction
 \description{
 Calculate the (not yet log transformed) ascertainment correction under a bivariate Q_i
 }
+

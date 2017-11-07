@@ -23,3 +23,4 @@ V_i
 \description{
 Calculate V_i = Z_i D t(Z_i) + sig_e^2 I_{n_i}
 }
+

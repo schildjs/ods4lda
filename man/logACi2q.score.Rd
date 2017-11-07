@@ -32,3 +32,4 @@ gradient of the log transformed ascertainment correction under the bivariate sam
 \description{
 Calculate the gradient of the log transformed ascertainment correction under designs that sample based on a bivariate Q_i (numerically)
 }
+
