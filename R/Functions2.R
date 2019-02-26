@@ -418,7 +418,7 @@ LogLikeC.score <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho, s
         logAC.Score  <- Reduce('+', logACi.Score)
         CorrectedScore <- UncorrectedScore - logAC.Score  ## notice this has the opposite sign compared to above.  Remember to check
     }
-
+    #print(subjectData[[1]])
     if (CheeseCalc==TRUE){
         if (w.function != "bivar"){ GradiMat <- mapply("+", Gradienti, logACi.Score)
         }else{                      GradiMat <- mapply("-", Gradienti, logACi.Score)} ## notice this has the opposite sign compared to above.  Remember to check
@@ -667,6 +667,7 @@ acml.lmem <- function(formula.fixed, ## formula for the fixed effects (of the fo
                              SampProbiWL=SampProbi,
                              SampProbiVar = as.character(substitute(SampProbiWL)),
                              ProfileCol=ProfileCol)
+    class(out) <- "acml.lmem"
     if(kappa(out$covar) > 1e5) warning("Poorly Conditioned Model")
     out
 }

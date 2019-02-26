@@ -648,6 +648,7 @@ acml.lmem2 <- function(formula.fixed,
                              #WeightsVar = as.character(substitute(Weights)),
                              WeightsVar = Weights0,
                              ProfileCol=ProfileCol)
+    class(out) <- "acml.lmem2"
     if(kappa(out$covar) > 1e5) warning("Poorly Conditioned Model")
     out
 }
