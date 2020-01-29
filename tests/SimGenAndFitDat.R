@@ -4,7 +4,7 @@ library(mvtnorm)
 library(mitools)
 library(ODS4LDA)
 source("SimGenDatFns.R")
-source("SimImputationFns.R")
+source("ImputationFns.R")
 
 #source(paste(path, "Functions4.R", sep=""))
 
@@ -24,6 +24,8 @@ source("SimImputationFns.R")
 
     params=c(75, -1, -.5, -2, -.5, log(9),log(1.25),0,log(3.5))
     NsPerStratumUniv=c(150,100,150)
+    NsPerStratumBiv=c(100,300)
+
     N=2000
     prev.grp=0.3
     n.imp=50
@@ -59,24 +61,32 @@ source("SimImputationFns.R")
     ## identify stratum membership
     dat$StratInt <- identify.stratum(Y=dat$y, time=dat$time, id=dat$id, w.function="intercept", cutpoints=cutoffs$IntCutUniv, Int=dat$Int, Slp=dat$Slp)
     dat$StratSlp <- identify.stratum(Y=dat$y, time=dat$time, id=dat$id, w.function="slope",     cutpoints=cutoffs$SlpCutUniv, Int=dat$Int, Slp=dat$Slp)
+    dat$StratBiv <- identify.stratum(Y=dat$y, time=dat$time, id=dat$id, w.function="bivar",     cutpoints=c(cutoffs$IntCutBiv, cutoffs$SlpCutBiv), Int=dat$Int, Slp=dat$Slp)
 
     ## identify the sample along with individual sampling probs and stratum sampling probs
     SampledRan <- random.sampling(id.long=dat$id, n=NsRand)
     SampledInt <- ods.sampling(id.long=dat$id, stratum.long=dat$StratInt, SamplingStrategy="IndepODS", NsPerStratum=NsPerStratumUniv)
     SampledSlp <- ods.sampling(id.long=dat$id, stratum.long=dat$StratSlp, SamplingStrategy="IndepODS", NsPerStratum=NsPerStratumUniv)
+    SampledBiv <- ods.sampling(id.long=dat$id, stratum.long=dat$StratBiv, SamplingStrategy="IndepODS", NsPerStratum=NsPerStratumBiv)
 
     ## add who will be sampled for each design to dat
     dat$SampledRan <- SampledRan
-    dat$SampledInt <- SampledInt[[1]]
-    dat$SampledSlp <- SampledSlp[[1]]
+    dat$SampledInt <- SampledInt[["Sampled"]]
+    dat$SampledSlp <- SampledSlp[["Sampled"]]
     dat$SampledMix1 <- dat$SampledInt*(dat$id <= N/3) + dat$SampledSlp*(dat$id > N/3)
     dat$SampledMix2 <- dat$SampledInt*(dat$id <= 2*N/3) + dat$SampledSlp*(dat$id > 2*N/3)
+    dat$SampledBiv <-  SampledBiv[["Sampled"]]
 
     ## Added subject specific sampling weights for each design if doing a weighted likelihood analysis
-    dat$WeightsInt <- 1/SampledInt[[2]]
-    dat$WeightsSlp <- 1/SampledSlp[[2]]
-    dat$WeightsMix1 <- 1/(SampledInt[[2]]*(dat$id <= N/3) + SampledSlp[[2]]*(dat$id > N/3))
-    dat$WeightsMix2 <- 1/(SampledInt[[2]]*(dat$id <= 2*N/3) + SampledSlp[[2]]*(dat$id > 2*N/3))
+    dat$WeightsInt <- 1/SampledInt[["SampProbi"]]
+    dat$WeightsSlp <- 1/SampledSlp[["SampProbi"]]
+    dat$WeightsMix1 <- 1/(SampledInt[["SampProbi"]]*(dat$id <= N/3) + SampledSlp[["SampProbi"]]*(dat$id > N/3))
+    dat$WeightsMix2 <- 1/(SampledInt[["SampProbi"]]*(dat$id <= 2*N/3) + SampledSlp[["SampProbi"]]*(dat$id > 2*N/3))
+    dat$WeightsBiv <- 1/SampledBiv[["SampProbi"]]
+    ## for acml.lmem (not acml.lmem2)
+    dat$SampProbiInt <- SampledInt[["SampProbi"]]
+    dat$SampProbiSlp <- SampledSlp[["SampProbi"]]
+    dat$SampProbiBiv <- SampledBiv[["SampProbi"]]
 
     ## This is used if we are not doing sampling weights
     dat$NoWeighting <-1
@@ -93,6 +103,8 @@ source("SimImputationFns.R")
     dat$Mix2ProbLow  <- SampledInt[["SampProbs"]][1]*(dat$id <= 2*N/3) + SampledSlp[["SampProbs"]][1]*(dat$id > 2*N/3)
     dat$Mix2ProbMid  <- SampledInt[["SampProbs"]][2]*(dat$id <= 2*N/3) + SampledSlp[["SampProbs"]][2]*(dat$id > 2*N/3)
     dat$Mix2ProbHigh <- SampledInt[["SampProbs"]][3]*(dat$id <= 2*N/3) + SampledSlp[["SampProbs"]][3]*(dat$id > 2*N/3)
+    dat$BivProbInner <- SampledBiv[["SampProbs"]][1]
+    dat$BivProbOuter <- SampledBiv[["SampProbs"]][2]
 
     dat$IntCutoff1 <- cutoffs$IntCutUniv[1]
     dat$IntCutoff2 <- cutoffs$IntCutUniv[2]
@@ -102,17 +114,23 @@ source("SimImputationFns.R")
     dat$Mix1Cutoff2 <- dat$IntCutoff2*(dat$id <= N/3) + dat$SlpCutoff2*(dat$id > N/3)
     dat$Mix2Cutoff1 <- dat$IntCutoff1*(dat$id <= 2*N/3) + dat$SlpCutoff1*(dat$id > 2*N/3)
     dat$Mix2Cutoff2 <- dat$IntCutoff2*(dat$id <= 2*N/3) + dat$SlpCutoff2*(dat$id > 2*N/3)
+    dat$BivCutoffInt1 <- cutoffs$IntCutBiv[1]
+    dat$BivCutoffInt2 <- cutoffs$IntCutBiv[2]
+    dat$BivCutoffSlp1 <- cutoffs$SlpCutBiv[1]
+    dat$BivCutoffSlp2 <- cutoffs$SlpCutBiv[2]
 
     ## Define w.function within dat for each design
     dat$Int.w <- "intercept"
     dat$Slp.w <- "slope"
     dat$Mix1.w <- ifelse(dat$id <= N/3, dat$Int.w, dat$Slp.w)
     dat$Mix2.w <- ifelse(dat$id <= 2*N/3, dat$Int.w, dat$Slp.w)
+    dat$Biv.w <- "bivar"
 
     ## Stratum Sampling probabilities
     SampProbRan <- c(1,1,1)
     SampProbInt <- SampledInt[["SampProbs"]]
     SampProbSlp <- SampledSlp[["SampProbs"]]
+    SampProbBiv <- SampledBiv[["SampProbs"]]
 
     ## Datasets for sampled subjects
     datRan  <- dat[dat$SampledRan==1,]
@@ -120,6 +138,7 @@ source("SimImputationFns.R")
     datSlp  <- dat[dat$SampledSlp==1,]
     datMix1 <- dat[dat$SampledMix1==1,]
     datMix2 <- dat[dat$SampledMix2==1,]
+    datBiv  <- dat[dat$SampledBiv==1,]
 
     cutpointsRan=cbind(datRan$IntCutoff1, datRan$IntCutoff2)  ## just need these numbers for the function, not used
     SampProbRan=matrix(1, ncol=3, nrow=length(datRan[,1]))
@@ -141,12 +160,17 @@ source("SimImputationFns.R")
     SampProbMix2=cbind(datMix2$Mix2ProbLow, datMix2$Mix2ProbMid, datMix2$Mix2ProbHigh)
     w.functionMix2=datMix2$Mix2.w
 
+    cutpointsBiv=cbind(datBiv$BivCutoffInt1, datBiv$BivCutoffInt2, datBiv$BivCutoffSlp1, datBiv$BivCutoffSlp2)
+    SampProbBiv=cbind(datBiv$BivProbInner, datBiv$BivProbOuter)
+    w.functionBiv=datBiv$Biv.w
+
     ## Datasets for unsampled subjects
     datNotRan  <- dat[dat$SampledRan==0,]
     datNotInt  <- dat[dat$SampledInt==0,]
     datNotSlp  <- dat[dat$SampledSlp==0,]
     datNotMix1 <- dat[dat$SampledMix1==0,]
     datNotMix2 <- dat[dat$SampledMix2==0,]
+    datNotBiv  <- dat[dat$SampledBiv==0,]
 
     cutpointsNotRan=cbind(datNotRan$IntCutoff1, datNotRan$IntCutoff2)  ## just need these numbers for the function, not used
     SampProbNotRan=matrix(1, ncol=3, nrow=length(datNotRan[,1]))
@@ -168,28 +192,72 @@ source("SimImputationFns.R")
     SampProbNotMix2=cbind(datNotMix2$Mix2ProbLow, datNotMix2$Mix2ProbMid, datNotMix2$Mix2ProbHigh)
     w.functionNotMix2=datNotMix2$Mix2.w
 
+    cutpointsNotBiv=cbind(datNotBiv$BivCutoffInt1, datNotBiv$BivCutoffInt2, datNotBiv$BivCutoffSlp1, datNotBiv$BivCutoffSlp2)
+    SampProbNotBiv=cbind(datNotBiv$BivProbInner, datNotBiv$BivProbOuter)
+    w.functionNotBiv=datNotBiv$Biv.w
+
+    CalcDiffs <- function(x,y) {
+        out <- list(x[["coefficients"]]-y[["coefficients"]],
+                    x[["covariance"]]-y[["covariance"]],
+                    x[["robcov"]]-y[["robcov"]],
+                    x[["loglik"]]-y[["loglik"]])
+        out}
+
+
+    simplify2array(Fit.ran, Fit.ran2)
     ####### Complete case analyses
     print("Univariate ACML, WL, and ML Analyses")
-
+    print(date())
     Fit.ran     <- acml.lmem2(formula.fixed=y~time*grp+conf, formula.random= ~time, id=id, data=datRan, InitVals=inits, ProfileCol=NA,
                               cutpoints=cutpointsRan, SampProb=SampProbRan, Weights=NoWeighting, w.function=w.functionRan)
     print(date())
 
+    datRan$SampProbiNoWt <- 1
+    Fit.ran2     <- acml.lmem(formula.fixed=y~time*grp+conf, formula.random= ~time, id=id, data=datRan, InitVals=inits, ProfileCol=NA,
+                              cutpoints=cutpointsRan[1,], SampProb=SampProbRan[1,], SampProbiWL=SampProbiNoWt, w.function=w.functionRan[1])
+    print(date())
+
+    CalcDiffs(Fit.ran,Fit.ran2)
+
     Fit.int     <- acml.lmem2(formula.fixed=y~time*grp+conf, formula.random= ~time, id=id, data=datInt, InitVals=inits, ProfileCol=NA,
                               cutpoints=cutpointsInt, SampProb=SampProbInt, Weights=NoWeighting, w.function=w.functionInt)
     print(date())
-    datInt$SampProbiWL <- 1/datInt$NoWeighting
+    datInt$SampProbiNoWt <- 1
     Fit.int2     <- acml.lmem(formula.fixed=y~time*grp+conf, formula.random= ~time, id=id, data=datInt, InitVals=inits, ProfileCol=NA,
-                              cutpoints=cutpointsInt[1,], SampProb=SampProbInt[1,], SampProbiWL=SampProbiWL, w.function=w.functionInt[1])
+                              cutpoints=cutpointsInt[1,], SampProb=SampProbInt[1,], SampProbiWL=SampProbiNoWt, w.function=w.functionInt[1])
     print(date())
+
+    CalcDiffs(Fit.int,Fit.int2)
+
+    Fit.int.wl     <- acml.lmem2(formula.fixed=y~time*grp+conf, formula.random= ~time, id=id, data=datInt, InitVals=inits, ProfileCol=NA,
+                                 cutpoints=cutpointsInt, SampProb=matrix(1, nrow=nrow(datInt), ncol=3), Weights=WeightsInt, w.function=w.functionInt)
+    print(date())
+
+    Fit.int.wl2     <- acml.lmem(formula.fixed=y~time*grp+conf, formula.random= ~time, id=id, data=datInt, InitVals=inits, ProfileCol=NA,
+                                 cutpoints=cutpointsInt[1,], SampProb=matrix(1, nrow=nrow(datInt), ncol=3)[1,], SampProbiWL =SampProbiInt, w.function=w.functionInt[1])
+
+    print(date())
+
+    CalcDiffs(Fit.int.wl,Fit.int.wl2)
+
 
     Fit.slp     <- acml.lmem2(formula.fixed=y~time*grp+conf, formula.random= ~time, id=id, data=datSlp, InitVals=inits, ProfileCol=NA,
                               cutpoints=cutpointsSlp, SampProb=SampProbSlp, Weights=NoWeighting, w.function=w.functionSlp)
     print(date())
-    datSlp$SampProbiWL <- 1/datSlp$NoWeighting
+    datSlp$SampProbiNoWt <- 1
     Fit.slp2     <- acml.lmem(formula.fixed=y~time*grp+conf, formula.random= ~time, id=id, data=datSlp, InitVals=inits, ProfileCol=NA,
-                              cutpoints=cutpointsSlp[1,], SampProb=SampProbSlp[1,], SampProbiWL=SampProbiWL, w.function=w.functionSlp[1])
+                              cutpoints=cutpointsSlp[1,], SampProb=SampProbSlp[1,], SampProbiWL=SampProbiNoWt, w.function=w.functionSlp[1])
     print(date())
+    CalcDiffs(Fit.slp,Fit.slp2)
+
+    Fit.slp.wl     <- acml.lmem2(formula.fixed=y~time*grp+conf, formula.random= ~time, id=id, data=datSlp, InitVals=inits, ProfileCol=NA,
+                                 cutpoints=cutpointsSlp, SampProb=matrix(1, nrow=nrow(datSlp), ncol=3), Weights=WeightsSlp, w.function=w.functionSlp)
+    print(date())
+
+    Fit.slp.wl2     <- acml.lmem(formula.fixed=y~time*grp+conf, formula.random= ~time, id=id, data=datSlp, InitVals=inits, ProfileCol=NA,
+                                 cutpoints=cutpointsSlp[1,], SampProb=matrix(1, nrow=nrow(datSlp), ncol=3), SampProbiWL=SampProbiSlp, w.function=w.functionSlp[1])
+    print(date())
+    CalcDiffs(Fit.slp.wl,Fit.slp.wl2)
 
     Fit.mix1     <- acml.lmem2(formula.fixed=y~time*grp+conf, formula.random= ~time, id=id, data=datMix1, InitVals=inits, ProfileCol=NA,
                                   cutpoints=cutpointsMix1, SampProb=SampProbMix1, Weights=NoWeighting, w.function=w.functionMix1)
@@ -199,14 +267,6 @@ source("SimImputationFns.R")
                                cutpoints=cutpointsMix2, SampProb=SampProbMix2, Weights=NoWeighting, w.function=w.functionMix2)
     print(date())
 
-    Fit.int.wl     <- acml.lmem2(formula.fixed=y~time*grp+conf, formula.random= ~time, id=id, data=datInt, InitVals=inits, ProfileCol=NA,
-                              cutpoints=cutpointsInt, SampProb=matrix(1, nrow=nrow(datInt), ncol=3), Weights=WeightsInt, w.function=w.functionInt)
-    print(date())
-
-    Fit.slp.wl     <- acml.lmem2(formula.fixed=y~time*grp+conf, formula.random= ~time, id=id, data=datSlp, InitVals=inits, ProfileCol=NA,
-                              cutpoints=cutpointsSlp, SampProb=matrix(1, nrow=nrow(datSlp), ncol=3), Weights=WeightsSlp, w.function=w.functionSlp)
-    print(date())
-
     Fit.mix1.wl     <- acml.lmem2(formula.fixed=y~time*grp+conf, formula.random= ~time, id=id, data=datMix1, InitVals=inits, ProfileCol=NA,
                               cutpoints=cutpointsMix1, SampProb=matrix(1, nrow=nrow(datMix1), ncol=3), Weights=WeightsMix1, w.function=w.functionMix1)
     print(date())
@@ -214,6 +274,27 @@ source("SimImputationFns.R")
     Fit.mix2.wl     <- acml.lmem2(formula.fixed=y~time*grp+conf, formula.random= ~time, id=id, data=datMix2, InitVals=inits, ProfileCol=NA,
                                  cutpoints=cutpointsMix2, SampProb=matrix(1, nrow=nrow(datMix2), ncol=3), Weights=WeightsMix2, w.function=w.functionMix2)
     print(date())
+
+    Fit.biv     <- acml.lmem2(formula.fixed=y~time*grp+conf, formula.random= ~time, id=id, data=datBiv, InitVals=inits, ProfileCol=NA,
+                              cutpoints=cutpointsBiv, SampProb=SampProbBiv, Weights=NoWeighting, w.function=w.functionBiv)
+    print(date())
+
+    Fit.biv2     <- acml.lmem(formula.fixed=y~time*grp+conf, formula.random= ~time, id=id, data=datBiv, InitVals=inits, ProfileCol=NA,
+                              cutpoints=c(cutoffs$IntCutBiv, cutoffs$SlpCutBiv), SampProb=SampProbBiv[1,], SampProbiWL=NoWeighting, w.function="bivar")
+    print(date())
+
+    CalcDiffs(Fit.biv,Fit.biv2)
+
+    Fit.biv.wl     <- acml.lmem2(formula.fixed=y~time*grp+conf, formula.random= ~time, id=id, data=datBiv, InitVals=inits, ProfileCol=NA,
+                              cutpoints=cutpointsBiv, SampProb=matrix(1, nrow=nrow(datBiv), ncol=2), Weights=WeightsBiv, w.function=w.functionBiv)
+    print(date())
+
+    Fit.biv.wl2     <- acml.lmem(formula.fixed=y~time*grp+conf, formula.random= ~time, id=id, data=datBiv, InitVals=inits, ProfileCol=NA,
+                              cutpoints=c(cutoffs$IntCutBiv, cutoffs$SlpCutBiv), SampProb=c(1,1), SampProbiWL=SampProbiBiv, w.function="bivar")
+    print(date())
+
+    CalcDiffs(Fit.biv.wl,Fit.biv.wl2)
+
 
     ########## Indirect Imputation Analysis
     print("Indirect Imputation Analyses"); print(date())

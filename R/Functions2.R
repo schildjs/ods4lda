@@ -658,6 +658,8 @@ acml.lmem <- function(formula.fixed, ## formula for the fixed effects (of the fo
     out$covariance   <- solve(ObsInfo)
     out$robcov       <- solve(ObsInfo)%*%Cheese%*%solve(ObsInfo)
     out$logLik       <- -acml.fit$minimum
+    out$control      <- list('code'=acml.fit$code, 'n.iter'=acml.fit$iterations,
+                             'n.clusters'=length(unique(id)), 'n.obs'=length(id), 'max.cluster.size'=max(table(id)))
     attr(out,'args') <- list(formula.fixed=formula.fixed,
                              formula.random=formula.random,
                              id=id,

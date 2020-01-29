@@ -32,4 +32,3 @@ gradient of the log transformed ascertainment correction under univariate $Q_i$
 \description{
 Calculate the gradient of the log transformed ascertainment correction for sampling based on univariate Q_i
 }
-

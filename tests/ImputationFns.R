@@ -137,16 +137,6 @@ IndirectImputation <- function(acml.fit, datSampled, datNotSampled, cutpointsNot
         fixed.matrix1    <- model.matrix(fixed.form, data=datNotSampled.1)
         rand.matrix      <- model.matrix(rand.form, data=datNotSampled.0)
         
-        # tmp.0 <- LogLikeCAndScore2(params=Y.Xe.Xo.Seq1.MI.params, y=mod.y, x=fixed.matrix0, z=rand.matrix, id=datNotSampled.0$id,
-        #                            w.function=datNotSampled.0$Mix.w, 
-        #                            cutpoints=cbind(datNotSampled.0$MixCutoff1,datNotSampled.0$MixCutoff2), 
-        #                            SampProb=cbind(datNotSampled.0$MixProbLow,datNotSampled.0$MixProbMid, datNotSampled.0$MixProbHigh), 
-        #                            Weights=datNotSampled.0[,WeightsVar], ProfileCol=ProfileCol, Keep.liC=TRUE)
-        # tmp.1 <- LogLikeCAndScore2(params=Y.Xe.Xo.Seq1.MI.params, y=mod.y, x=fixed.matrix1, z=rand.matrix, id=datNotSampled.1$id,
-        #                            w.function=datNotSampled.1$Mix.w, 
-        #                            cutpoints=cbind(datNotSampled.1$MixCutoff1,datNotSampled.1$MixCutoff2), 
-        #                            SampProb=cbind(datNotSampled.1$MixProbLow,datNotSampled.1$MixProbMid, datNotSampled.1$MixProbHigh), 
-        #                            Weights=datNotSampled.1[,WeightsVar], ProfileCol=ProfileCol, Keep.liC=TRUE)
         tmp.0 <- LogLikeCAndScore2(params=Y.Xe.Xo.Seq1.MI.params, y=mod.y, x=fixed.matrix0, z=rand.matrix, id=datNotSampled.0$id,
                                    w.function=w.functionNotSampled, cutpoints=cutpointsNotSampled, SampProb=SampProbNotSampled, 
                                    Weights=datNotSampled.0[,WeightsVar], ProfileCol=ProfileCol, Keep.liC=TRUE)

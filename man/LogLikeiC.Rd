@@ -4,8 +4,8 @@
 \alias{LogLikeiC}
 \title{Calculate the ss contributions to the conditional likelihood for the univariate and bivariate sampling cases.}
 \usage{
-LogLikeiC(subjectData, w.function, beta, sigma0, sigma1, rho, sigmae, cutpoints,
-  SampProb)
+LogLikeiC(subjectData, w.function, beta, sigma0, sigma1, rho, sigmae,
+  cutpoints, SampProb)
 }
 \arguments{
 \item{subjectData}{a list containing: yi, xi, zi, SampProbi.i}
@@ -32,4 +32,3 @@ ss contributions to the conditional log likelihood.  This is an internal functio
 \description{
 Calculate the ss contributions to the conditional likelihood for the univariate and bivariate sampling cases.
 }
-

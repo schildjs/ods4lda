@@ -12,4 +12,3 @@ odsSlp
 XXX Describe derivation of data set here and what the columns mean
 }
 \keyword{data}
-

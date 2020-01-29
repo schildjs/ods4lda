@@ -39,4 +39,3 @@ The conditional log likelihood with a "gradient" attribute (if Keep.liC=FALSE) a
 \description{
 Calculate the ascertainment corrected log likelihood and score
 }
-
