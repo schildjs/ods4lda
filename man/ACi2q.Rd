@@ -21,9 +21,9 @@ ACi2q(cutpoints, SampProb, mu_q, sigma_q)
 
 \item{SampProb}{Sampling probabilities from within each of two sampling regions; central region and outlying region (vector of length 2).}
 
-\item{mu_q}{a 2-vector for the mean value of the bivariate Q_i distribution. Note that I used mu_q[1:2] and sigma_q[1:2,1:2] in the pmvnorm call to force bivariate intercept and slope sampling for the first outcome.  This will need to be adapted when we want to sample based on, say, the two slopes for the first and second outcomes}
+\item{mu_q}{a 2-vector for the mean value of the bivariate Q_i distribution.}
 
-\item{sigma_q}{a 2 by 2 covariance matrix for the bivariate Q_i distribution. Note that I used mu_q[1:2] and sigma_q[1:2,1:2] in the pmvnorm call to force bivariate intercept and slope sampling for the first outcome.  This will need to be adapted when we want to sample based on, say, the two slopes for the first and second outcomes}
+\item{sigma_q}{a 2 by 2 covariance matrix for the bivariate Q_i distribution.}
 }
 \value{
 Not yet log transformed ascertainment correction

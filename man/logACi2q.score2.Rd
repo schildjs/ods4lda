@@ -23,5 +23,5 @@ logACi2q.score2(subjectData, beta, sigma.vc, rho.vc, sigma.e)
 gradient of the log transformed ascertainment correction under the bivariate sampling design
 }
 \description{
-Calculate the gradient of the log transformed ascertainment correction under designs that sample based on a bivariate Q_i (numerically). Note that I used mu_q[1:2] and sigma_q[1:2,1:2] in the pmvnorm call to force bivariate intercept and slope sampling for the first outcome.  This will need to be adapted when we want to sample based on, say, the two slopes for the first and second outcomes
+Calculate the gradient of the log transformed ascertainment correction under designs that sample based on a bivariate Q_i (numerically).
 }

@@ -5,8 +5,7 @@
 \title{Fitting function: ACML or WL for a linear mixed effects model (random intercept and slope)}
 \usage{
 acml.lmem2(formula.fixed, formula.random, data, id, w.function = "mean",
-  InitVals, cutpoints = c(0, 5), SampProb = NA, Weights = NA,
-  ProfileCol = NA)
+  InitVals, cutpoints, SampProb, Weights, ProfileCol = NA)
 }
 \arguments{
 \item{formula.fixed}{formula for the fixed effects (of the form y~x)}
@@ -17,13 +16,13 @@ acml.lmem2(formula.fixed, formula.random, data, id, w.function = "mean",
 
 \item{id}{sum(n_i) vector of subject ids (a variable contained in data)}
 
-\item{w.function}{A sum(n_i) vector with possible values that include "mean" "intercept" "slope" and "bivar."  Do not use "bivar" as it has not been tested.  There should be one unique value per subject but n_i replicates of that value.  Note that w.function should NOT be in the dat dataframe.}
+\item{w.function}{sum(n_i) vector with possible values that include "mean" (mean of response series), "intercept" (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi* zi) * t.zi)[1,]), "intercept1"  (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[1,]). "intercept2" (second intercept of the regression of the Yi ~}
 
 \item{InitVals}{starting values for c(beta, log(sigma0), log(sigma1), log((1+rho)/(1-rho)), log(sigmae))}
 
-\item{cutpoints}{A matrix with the first dimension equal to sum(n_i).  These cutpoints define the sampling regions for individual subjects.  If using a low, medium, high, sampling scheme, this is a sum(n_i) by 2 matrix that must be a distinct object not contained in the dat dataframe.  Each row is a vector of length 2 c(k1,k2) to define the sampling regions, i.e., low, middle, high.  Each subject should have n_i rows of the same values.}
+\item{cutpoints}{A matrix with the first dimension equal to sum(n_i).  These cutpoints define the sampling regions for individual subjects.  If using a low, medium, high, sampling scheme, this is a sum(n_i) by 2 matrix that must be a distinct object not contained in the dat dataframe.  Each row is a vector of length 2 c(k1,k2) to define the sampling regions, i.e., low, middle, high.  If using a square doughnut design this should be sum(n_i) by 4 matrix (var1lower, var1upper, var2lower, var2upper). Each subject should have n_i rows of the same values.}
 
-\item{SampProb}{A matrix with the first dimension equal to sum(n_i).   Sampling probabilities from within each region. Each row is a vector of length 3 with sampling probabilities for each region. Each subject should have n_i rows of the same values.  Not in data.}
+\item{SampProb}{A matrix with the first dimension equal to sum(n_i).   Sampling probabilities from within each region. For low medium high sampling, each row is a vector of length 3 with sampling probabilities for each region. For bivariate stratum sampling each row is a vector of length 2 with sampling probabilities for the inner and outer strata. Each subject should have n_i rows of the same values.  Not in data.}
 
 \item{Weights}{Subject specific sampling weights.  A vector of length sum(n_i).  This should be a variable in the data dataframe. It should only be used if doing IPWL.  Note if doing IPWL, only use robcov (robust variances) and not covar.  If not doing IPWL, this must be a vectors of 1s.}
 
